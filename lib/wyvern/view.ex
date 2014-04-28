@@ -17,18 +17,6 @@ defmodule Wyvern.View do
     has_settings: false,
   ]
 
-  def link_to(target, name) do
-    ~s'<a href="#{target}">#{name}</a>'
-  end
-
-  def link_to(target, name, attrs) do
-    attrstr =
-      attrs
-      |> Enum.map(fn {k, v} -> ~s'#{k}="#{v}"' end)
-      |> Enum.join(" ")
-    ~s'<a href="#{target}" #{attrstr}>#{name}</a>'
-  end
-
   def render([partial: name]) do
     Wyvern.render_partial(name)
   end
@@ -56,7 +44,7 @@ defmodule Wyvern.View do
     quote context: nil do
       require EEx
 
-      import Wyvern.View, only: [link_to: 3, render: 1, render: 2, content_for: 2]
+      import Wyvern.View, only: [render: 1, render: 2, content_for: 2]
 
       def render(_engine, model) do
         IO.puts "making page"
