@@ -14,20 +14,12 @@ defmodule Wyvern do
 
   @common_imports (quote do
     import Wyvern.View, only: [render: 1, render: 2, content_for: 2]
+  end)
+
+  @html_imports (quote do
     import Wyvern.View.HTMLHelpers, only: [link_to: 2, link_to: 3]
   end)
 
-
-  def render_string(str, opts) do
-    model = opts[:model]
-
-    q = quote context: nil do
-      unquote(@common_imports)
-      unquote(EEx.compile_string(str, [engine: Wyvern.SuperSmartEngine]))
-    end
-    {result, _} = Code.eval_quoted(q, [model: model])
-    result
-  end
 
   def render_view(model, opts, config \\ []) do
     layers = opts[:layers]
@@ -41,9 +33,10 @@ defmodule Wyvern do
     context[:content]
   end
 
-  defp render_template({:inline, view}, context, _config) do
+  defp render_template({:inline, view}, context, config) do
     q = quote context: nil do
       unquote(@common_imports)
+      unquote(if config[:ext] == "html", do: @html_imports)
       unquote(EEx.compile_string(view, [engine: Wyvern.SuperSmartEngine]))
     end
     {result, _} = Code.eval_quoted(q, [model: context[:model]])
@@ -62,6 +55,7 @@ defmodule Wyvern do
 
     q = quote context: nil do
       unquote(@common_imports)
+      unquote(if config[:ext] == "html", do: @html_imports)
       unquote(EEx.compile_file(path, [engine: Wyvern.SuperSmartEngine]))
     end
     {result, _} = Code.eval_quoted(q, [model: context[:model]], file: filename)
@@ -74,6 +68,7 @@ defmodule Wyvern do
 
     q = quote context: nil do
       unquote(@common_imports)
+      unquote(if config[:ext] == "html", do: @html_imports)
       unquote(EEx.compile_file(path, [engine: Wyvern.SuperSmartEngine]))
     end
     {result, _} = Code.eval_quoted(q, [], file: filename)

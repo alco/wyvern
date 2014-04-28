@@ -20,7 +20,7 @@ defmodule WyvernTest.Templates do
   end
 end
 
-defmodule WyvernTest.Helpers do
+defmodule WyvernTest.HTMLHelpers do
   use ExUnit.Case
 
   alias Wyvern.View.HTMLHelpers, as: H
@@ -42,5 +42,12 @@ defmodule WyvernTest.Helpers do
     template = ~s'...<%= link_to "/", "Home", id: "home" %>...'
     assert Wyvern.render_view([], layers: [{:inline, template}])
            == ~s'...<a href="/" id="home">Home</a>...'
+  end
+
+  test "link in non-html template" do
+    template = ~s'...<%= link_to "/", "Home" %>...'
+    assert_raise CompileError, fn ->
+      Wyvern.render_view([], [layers: [{:inline, template}]], [ext: "txt"])
+    end
   end
 end
