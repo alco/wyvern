@@ -64,7 +64,7 @@ defmodule Wyvern do
   end
 
   def render_partial(name, config) do
-    {filename, config} = make_filename(name, config, partial: true)
+    {filename, _config} = make_filename(name, config, partial: true)
     path = Path.join(@partials_root, filename)
 
     q = quote context: nil do
