@@ -1,8 +1,8 @@
 defmodule Wyvern do
-  @partials_root "lib/:app/views/partials"
   @templates_root "lib/:app/views/templates"
 
   @default_config [
+    partials_root: "lib/:app/views/partials",
     views_root: "lib/:app/views",
     ext: "html",
     engine: :eex,
@@ -13,7 +13,7 @@ defmodule Wyvern do
   ]
 
   @common_imports (quote do
-    import Wyvern.View, only: [render: 1, render: 2, content_for: 2]
+    import Wyvern.View.Helpers, only: [render: 1, render: 2]
   end)
 
   @html_imports (quote do
@@ -62,9 +62,11 @@ defmodule Wyvern do
     Keyword.put(context, :content, result)
   end
 
+
   def render_partial(name, config) do
+    config = Keyword.merge(@default_config, config || [])
     {filename, _config} = make_filename(name, config, partial: true)
-    path = Path.join(@partials_root, filename)
+    path = Path.join(config[:partials_root], filename)
 
     q = quote context: nil do
       unquote(@common_imports)
@@ -73,6 +75,26 @@ defmodule Wyvern do
     end
     {result, _} = Code.eval_quoted(q, [], file: filename)
     result
+  end
+
+  def render_tag(thing, tag, opts) do
+    if Enumerable.impl_for(thing) do
+      for item <- thing do
+        render_single_tag(item, tag, opts)
+      end
+    else
+      render_single_tag(thing, tag, opts)
+    end
+  end
+
+  defp render_single_tag({:src, file}, :script, _) do
+    # FIXME: escape quotes in file
+    ~s'<script src="#{file}" type="application/javascript"></script>'
+  end
+
+  defp render_single_tag({:inline, text}, :script, _) do
+    # FIXME: escape html in text
+    ~s'<script type="application/javascript">#{text}</script>'
   end
 
   defp make_filename(name, config, opts \\ []) do

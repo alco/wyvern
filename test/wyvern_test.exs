@@ -14,10 +14,40 @@ defmodule WyvernTest.Templates do
   end
 
   test "basic file template" do
-    views_root = Path.join([System.cwd(), "test", "fixtures"])
     assert Wyvern.render_view([name: "people"], [layers: ["basic"]], [views_root: views_root])
            == "Hello people!\n"
   end
+
+  defp views_root, do: Path.join([System.cwd(), "test", "fixtures"])
+end
+
+defmodule WyvernTest.Helpers do
+  use ExUnit.Case
+
+  alias Wyvern.View.Helpers, as: H
+
+  test "render partial helper" do
+    assert H.render(partial: "about", config: [partials_root: partials_root])
+           == "hi hi hi\n"
+  end
+
+  test "render tag helper" do
+    assert H.render({:src, "file.js"}, tag: :script)
+           == ~s'<script src="file.js" type="application/javascript"></script>'
+
+    assert H.render({:inline, "console.log();"}, tag: :script)
+           == ~s'<script type="application/javascript">console.log();</script>'
+
+    html = [
+      ~s'<script src="1.js" type="application/javascript"></script>',
+      ~s'<script src="2.js" type="application/javascript"></script>',
+      ~s'<script type="application/javascript">hello</script>',
+    ]
+    assert H.render([src: "1.js", src: "2.js", inline: "hello"], tag: :script)
+           == html
+  end
+
+  defp partials_root, do: Path.join([System.cwd(), "test", "fixtures", "partials"])
 end
 
 defmodule WyvernTest.HTMLHelpers do

@@ -17,13 +17,6 @@ defmodule Wyvern.View do
     has_settings: false,
   ]
 
-  def render([partial: name]) do
-    Wyvern.render_partial(name)
-  end
-
-  def render(_thing, _opts) do
-  end
-
   defmacro content_for(target, [do: code]) do
     Process.put({:content, target}, code)
     #IO.puts "content_for #{target}"
