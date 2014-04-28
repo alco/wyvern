@@ -4,7 +4,12 @@ defmodule Wyvern do
 
   @default_config [
     views_root: "lib/:app/views",
-    ext: "html.eex",
+    ext: "html",
+    engine: :eex,
+  ]
+
+  @known_engines [
+    {"eex", :eex},
   ]
 
 
@@ -41,8 +46,7 @@ defmodule Wyvern do
   end
 
   defp render_template(name, context, config) do
-    filename = Enum.join([name, config[:ext]], ".")
-
+    {filename, config} = make_filename(name, config)
     path = Path.join(config[:views_root], filename)
 
     #path = if String.contains?(name, "/") do
@@ -60,7 +64,7 @@ defmodule Wyvern do
   end
 
   def render_partial(name, config) do
-    filename = Enum.join(["_"<>name, config[:ext]], ".")
+    {filename, config} = make_filename(name, config, partial: true)
     path = Path.join(@partials_root, filename)
 
     q = quote context: nil do
@@ -70,4 +74,33 @@ defmodule Wyvern do
     {result, _} = Code.eval_quoted(q, [], file: filename)
     result
   end
+
+  defp make_filename(name, config, opts \\ []) do
+    filename = if String.contains?(name, ".") do
+      config = detect_engine(name, config)
+      name
+    else
+      name <> make_ext(config)
+    end
+
+    if opts[:partial], do: filename = "_" <> filename
+
+    {filename, config}
+  end
+
+  defp detect_engine(name, config) do
+    [_, ext] = Regex.run(~r/\.([^.]+)$/, name)
+    case List.keyfind(@known_engines, ext, 0) do
+      {_, engine} -> Keyword.put(config, :engine, engine)
+      nil         -> config  # will use the default engine
+    end
+  end
+
+  defp make_ext(config) do
+    ext = config[:ext]
+    engine_ext = map_engine(config[:engine])
+    ".#{ext}.#{engine_ext}"
+  end
+
+  defp map_engine(:eex), do: "eex"
 end
