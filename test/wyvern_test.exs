@@ -113,7 +113,7 @@ defmodule WyvernTest.Layers do
            #== "top level middle levelbottom level"
   #end
 
-  test "full-blown html test" do
+  test "full-blown html" do
     model = %{
       title: "Test Page",
       stylesheets: [src: "/css/style1.css", src: "/css/style2.css"],
