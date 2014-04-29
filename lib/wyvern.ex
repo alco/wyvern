@@ -99,7 +99,7 @@ defmodule Wyvern do
     if Enumerable.impl_for(thing) do
       for item <- thing do
         render_single_tag(item, tag, opts)
-      end
+      end |> Enum.join("\n")
     else
       render_single_tag(thing, tag, opts)
     end

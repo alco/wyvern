@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Test Page</title>
+
+    <link href="/css/default.css" rel="stylesheet">
+
+    <link href="/css/style1.css" rel="stylesheet">
+<link href="/css/style2.css" rel="stylesheet">
+
+    <!-- additional head content -->
+  </head>
+
+  <body>
+    <div id="mainContainer">
+      <p>Main content</p>
+    </div>
+
+    <!-- Scripts -->
+    <script type="application/javascript">console.log("hi")</script>
+<script src="/ui.js" type="application/javascript"></script>
+  </body>
+</html>

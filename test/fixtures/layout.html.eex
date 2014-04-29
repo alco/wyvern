@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= model.title %></title>
+
+    <link href="/css/default.css" rel="stylesheet">
+
+    <%= render model.stylesheets, tag: :stylesheet %>
+
+    <%= yield :head %>
+  </head>
+
+  <body>
+    <div id="mainContainer">
+      <%= yield %>
+    </div>
+
+    <!-- Scripts -->
+    <%= render model.scripts, tag: :script %>
+  </body>
+</html>

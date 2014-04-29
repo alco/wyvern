@@ -82,6 +82,25 @@ defmodule WyvernTest.Layers do
     assert Wyvern.render_view([name: "people"], [layers: layers])
            == "top level"
   end
+
+  test "full-blown html test" do
+    model = %{
+      title: "Test Page",
+      stylesheets: [src: "/css/style1.css", src: "/css/style2.css"],
+      scripts: [inline: ~s'console.log("hi")', src: "/ui.js"],
+    }
+
+    sub_template =
+      "<p>Main content</p><% content_for :head do %><!-- additional head content --><% end %>"
+    layers = ["layout", {:inline, sub_template}]
+
+    result = Wyvern.render_view(model, [layers: layers], [views_root: views_root])
+    expected = File.read!(Path.join(views_root, "layout_rendered.html.eex"))
+
+    assert result == expected
+  end
+
+  defp views_root, do: Path.join([System.cwd(), "test", "fixtures"])
 end
 
 defmodule WyvernTest.Helpers do
@@ -105,7 +124,7 @@ defmodule WyvernTest.Helpers do
       ~s'<script src="1.js" type="application/javascript"></script>',
       ~s'<script src="2.js" type="application/javascript"></script>',
       ~s'<script type="application/javascript">hello</script>',
-    ]
+    ] |> Enum.join("\n")
     assert H.render([src: "1.js", src: "2.js", inline: "hello"], tag: :script)
            == scripts
   end
@@ -117,7 +136,7 @@ defmodule WyvernTest.Helpers do
     styles = [
       ~s'<link href="/bootstrap.css" rel="stylesheet">',
       ~s'<link href="http://example.com/style.css" rel="stylesheet">',
-    ]
+    ] |> Enum.join("\n")
     files = [src: "/bootstrap.css", src: "http://example.com/style.css"]
     assert H.render(files, tag: :stylesheet) == styles
   end
