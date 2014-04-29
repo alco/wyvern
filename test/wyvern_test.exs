@@ -83,6 +83,36 @@ defmodule WyvernTest.Layers do
            == "top level"
   end
 
+  test "transitive sections" do
+    layers = [
+      {:inline, "top level <%= yield :extra %>"},
+      {:inline, "middle level"},
+      {:inline, "bottom level <% content_for :extra do %>hello<% end %>"},
+    ]
+    assert Wyvern.render_view([], [layers: layers])
+           == "top level hello"
+  end
+
+  test "overriding sections" do
+    layers = [
+      {:inline, "top level <%= yield :extra %>"},
+      {:inline, "middle level <% content_for :extra do %>hello middle<% end %>"},
+      {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
+    ]
+    assert Wyvern.render_view([], [layers: layers])
+           == "top level hello middle"
+  end
+
+  #test "transitive content" do
+    #layers = [
+      #{:inline, "top level <%= yield %>"},
+      #{:inline, "middle level"},
+      #{:inline, "bottom level"},
+    #]
+    #assert Wyvern.render_view([], [layers: layers])
+           #== "top level middle levelbottom level"
+  #end
+
   test "full-blown html test" do
     model = %{
       title: "Test Page",
