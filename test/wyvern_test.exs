@@ -94,20 +94,32 @@ defmodule WyvernTest.Helpers do
            == "hi hi hi\n"
   end
 
-  test "render tag helper" do
+  test "render script tag helper" do
     assert H.render({:src, "file.js"}, tag: :script)
            == ~s'<script src="file.js" type="application/javascript"></script>'
 
     assert H.render({:inline, "console.log();"}, tag: :script)
            == ~s'<script type="application/javascript">console.log();</script>'
 
-    html = [
+    scripts = [
       ~s'<script src="1.js" type="application/javascript"></script>',
       ~s'<script src="2.js" type="application/javascript"></script>',
       ~s'<script type="application/javascript">hello</script>',
     ]
     assert H.render([src: "1.js", src: "2.js", inline: "hello"], tag: :script)
-           == html
+           == scripts
+  end
+
+  test "render stylesheets tag helper" do
+    assert H.render({:src, "style.css"}, tag: :stylesheet)
+           == ~s'<link href="style.css" rel="stylesheet">'
+
+    styles = [
+      ~s'<link href="/bootstrap.css" rel="stylesheet">',
+      ~s'<link href="http://example.com/style.css" rel="stylesheet">',
+    ]
+    files = [src: "/bootstrap.css", src: "http://example.com/style.css"]
+    assert H.render(files, tag: :stylesheet) == styles
   end
 
   test "content_for helper" do

@@ -115,6 +115,11 @@ defmodule Wyvern do
     ~s'<script type="application/javascript">#{text}</script>'
   end
 
+  defp render_single_tag({:src, file}, :stylesheet, _) do
+    # FIXME: escape quotes in file
+    ~s'<link href="#{file}" rel="stylesheet">'
+  end
+
   defp make_filename(name, config, opts \\ []) do
     filename = if String.contains?(name, ".") do
       config = detect_engine(name, config)
