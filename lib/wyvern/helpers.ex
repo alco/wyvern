@@ -12,4 +12,8 @@ defmodule Wyvern.View.Helpers do
         raise RuntimeError, message: "No other options supported"
     end
   end
+
+  defmacro content_for(section, [do: code]) do
+    Process.put({:content, section}, code)
+  end
 end

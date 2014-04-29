@@ -49,6 +49,39 @@ defmodule WyvernTest.Layers do
     assert Wyvern.render_view([name: "people"], [layers: layers])
            == "all the people love some people"
   end
+
+  test "layers with sections" do
+    base = """
+    Hello world. <%= yield :middle %> Interlude. <%= yield %> Footer.
+    """
+
+    section = """
+    Main content goes here.
+    <% content_for :middle do %>This is middle content.<% end %>
+    """
+
+    result = """
+    Hello world. This is middle content. Interlude. Main content goes here.
+
+     Footer.
+    """
+
+    layers = [
+      {:inline, base},
+      {:inline, section},
+    ]
+    assert Wyvern.render_view([], [layers: layers])
+           == result
+  end
+
+  test "unused layer content" do
+    layers = [
+      {:inline, "top level"},
+      {:inline, "sub level <% content_for :top do %>...<% end %>"},
+    ]
+    assert Wyvern.render_view([name: "people"], [layers: layers])
+           == "top level"
+  end
 end
 
 defmodule WyvernTest.Helpers do
@@ -75,6 +108,15 @@ defmodule WyvernTest.Helpers do
     ]
     assert H.render([src: "1.js", src: "2.js", inline: "hello"], tag: :script)
            == html
+  end
+
+  test "content_for helper" do
+    layers = [
+      {:inline, "<%= yield :hello %>"},
+      {:inline, "<% content_for :hello do %>hello<% end %>"},
+    ]
+    assert Wyvern.render_view([], [layers: layers])
+           == "hello"
   end
 
   defp partials_root, do: Path.join([System.cwd(), "test", "fixtures", "partials"])

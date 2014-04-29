@@ -17,13 +17,6 @@ defmodule Wyvern.View do
     has_settings: false,
   ]
 
-  defmacro content_for(target, [do: code]) do
-    Process.put({:content, target}, code)
-    #IO.puts "content_for #{target}"
-    #IO.inspect code
-    nil
-  end
-
   defmacro __before_compile__(env=Macro.Env[module: mod]) do
     stylesheets = Module.get_attribute(env.module, :stylesheets)
     scripts = Module.get_attribute(env.module, :scripts)

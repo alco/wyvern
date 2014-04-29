@@ -13,7 +13,7 @@ defmodule Wyvern do
   ]
 
   @common_imports (quote do
-    import Wyvern.View.Helpers, only: [render: 1, render: 2]
+    import Wyvern.View.Helpers, only: [render: 1, render: 2, content_for: 2]
   end)
 
   @html_imports (quote do
@@ -22,6 +22,24 @@ defmodule Wyvern do
 
 
   def render_view(model, opts, config \\ []) do
+    parent = self()
+    ref = make_ref()
+
+    spawn(fn ->
+      try do
+        send(parent, {:ok, ref, do_render_view(model, opts, config)})
+      rescue
+        e -> send(parent, {:exception, ref, e})
+      end
+    end)
+
+    receive do
+      {:ok, ^ref, result} -> result
+      {:exception, ^ref, e} -> raise e
+    end
+  end
+
+  defp do_render_view(model, opts, config) do
     layers = opts[:layers]
     config = Keyword.merge(@default_config, config)
     context =
