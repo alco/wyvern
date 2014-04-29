@@ -39,7 +39,7 @@ defmodule Wyvern.SuperSmartEngine do
 
   defp transform({:yield, _, nil}) do
     quote context: nil do
-      dom[:content]
+      _context[:content]
     end
   end
 

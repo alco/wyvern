@@ -39,7 +39,7 @@ defmodule Wyvern do
       unquote(if config[:ext] == "html", do: @html_imports)
       unquote(EEx.compile_string(view, [engine: Wyvern.SuperSmartEngine]))
     end
-    {result, _} = Code.eval_quoted(q, [model: context[:model]])
+    {result, _} = Code.eval_quoted(q, [model: context[:model], _context: context])
     Keyword.put(context, :content, result)
   end
 
@@ -58,7 +58,7 @@ defmodule Wyvern do
       unquote(if config[:ext] == "html", do: @html_imports)
       unquote(EEx.compile_file(path, [engine: Wyvern.SuperSmartEngine]))
     end
-    {result, _} = Code.eval_quoted(q, [model: context[:model]], file: filename)
+    {result, _} = Code.eval_quoted(q, [model: context[:model], _context: context], file: filename)
     Keyword.put(context, :content, result)
   end
 

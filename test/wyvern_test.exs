@@ -21,6 +21,36 @@ defmodule WyvernTest.Templates do
   defp views_root, do: Path.join([System.cwd(), "test", "fixtures"])
 end
 
+defmodule WyvernTest.Layers do
+  use ExUnit.Case
+
+  test "simple layering" do
+    layers = [
+      {:inline, "1 <%= yield %>"},
+      {:inline, "2 <%= yield %>"},
+      {:inline, "3"},
+    ]
+    assert Wyvern.render_view([], [layers: layers]) == "1 2 3"
+
+    layers = [
+      {:inline, "1 <%= yield %>"},
+      {:inline, "2 <%= yield %>"},
+      {:inline, "3 <%= yield %>"},
+    ]
+    assert Wyvern.render_view([], [layers: layers]) == "1 2 3 "
+  end
+
+  test "layers share the model" do
+    layers = [
+      {:inline, "all the <%= model[:name] %> <%= yield %>"},
+      {:inline, "love some <%= yield %>"},
+      {:inline, "<%= model[:name] %>"},
+    ]
+    assert Wyvern.render_view([name: "people"], [layers: layers])
+           == "all the people love some people"
+  end
+end
+
 defmodule WyvernTest.Helpers do
   use ExUnit.Case
 
