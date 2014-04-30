@@ -18,7 +18,7 @@ defmodule WyvernTest.HTML do
 
     config = [views_root: views_root, model: model]
     result = Wyvern.render_view(layers, config)
-    expected = File.read!(Path.join(views_root, "layout_rendered.html.eex"))
+    expected = File.read!(Path.join(views_root, "layout_rendered.html"))
 
     assert result == expected
   end
