@@ -37,7 +37,12 @@ defmodule Wyvern do
 
   defp preprocess_template(name, config) do
     {filename, config} = make_filename(name, config)
-    path = Path.join(get_templates_root(config), filename)
+    base_path = if String.contains?(name, "/") do
+      get_views_root(config)
+    else
+      get_templates_root(config)
+    end
+    path = Path.join(base_path, filename)
     SEEx.compile_file(path, config, [engine: Wyvern.SuperSmartEngine])
   end
 
