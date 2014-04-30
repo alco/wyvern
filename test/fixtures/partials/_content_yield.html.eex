@@ -1,0 +1,2 @@
+This content is from :content:
+<%= yield :content %>

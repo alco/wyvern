@@ -1,0 +1,2 @@
+This content is for :content:
+<% content_for :content do %>custom content<% end %>

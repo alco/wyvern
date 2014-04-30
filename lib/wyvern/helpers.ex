@@ -1,8 +1,4 @@
 defmodule Wyvern.View.Helpers do
-  def render([{:partial, name} | opts]) do
-    Wyvern.render_partial(name, opts[:config])
-  end
-
   def render(thing, opts) do
     cond do
       tag=opts[:tag] ->
@@ -11,10 +7,6 @@ defmodule Wyvern.View.Helpers do
       true ->
         raise RuntimeError, message: "No other options supported"
     end
-  end
-
-  defmacro content_for(section, [do: code]) do
-    Process.put({:content, section}, code)
   end
 
   def merge_fragments(fragments, new_fragments) do

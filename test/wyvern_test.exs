@@ -1,6 +1,8 @@
 defmodule WyvernTest.Templates do
   use ExUnit.Case
 
+  import Wyvern.TestHelpers
+
   test "basic string templates" do
     template = "Hello world!"
     assert Wyvern.render_view([], layers: [{:inline, template}])
@@ -17,8 +19,6 @@ defmodule WyvernTest.Templates do
     assert Wyvern.render_view([name: "people"], [layers: ["basic"]], [views_root: views_root])
            == "Hello people!\n"
   end
-
-  defp views_root, do: Path.join([System.cwd(), "test", "fixtures"])
 end
 
 defmodule WyvernTest.Layers do

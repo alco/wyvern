@@ -13,7 +13,7 @@ defmodule Wyvern do
   ]
 
   @common_imports (quote do
-    import Wyvern.View.Helpers, only: [render: 1, render: 2, content_for: 2]
+    import Wyvern.View.Helpers, only: [render: 2]
   end)
 
   @html_imports (quote do
@@ -35,15 +35,16 @@ defmodule Wyvern do
     render_template(stages, model, [], config, nil)
   end
 
-  defp preprocess_template({:inline, view}, _config) do
-    EEx.compile_string(view, [engine: Wyvern.SuperSmartEngine])
+  defp preprocess_template({:inline, view}, config) do
+    SEEx.compile_string(view, config, [engine: Wyvern.SuperSmartEngine])
   end
 
   defp preprocess_template(name, config) do
     {filename, config} = make_filename(name, config)
     path = Path.join(config[:views_root], filename)
-    EEx.compile_file(path, [engine: Wyvern.SuperSmartEngine])
+    SEEx.compile_file(path, config, [engine: Wyvern.SuperSmartEngine])
   end
+
 
   defp render_template([], _model, _fragments, _config, content) do
     content
@@ -56,7 +57,7 @@ defmodule Wyvern do
       unquote(if config[:ext] == "html", do: @html_imports)
       unquote(quoted)
     end
-    {result, _} = Code.eval_quoted(q, [model: model, _content: content])
+    {result, _} = Code.eval_quoted(q, [model: model, _content: content, _config: config])
     new_fragments = Wyvern.View.Helpers.merge_fragments(stage_frags, fragments)
     render_template(rest, model, new_fragments, config, result)
   end
@@ -80,15 +81,15 @@ defmodule Wyvern do
     {filename, _config} = make_filename(name, config, partial: true)
     path = Path.join(config[:partials_root], filename)
 
-    q = quote context: nil do
-      unquote(@common_imports)
-      unquote(if config[:ext] == "html", do: @html_imports)
-      {result, _} = unquote(EEx.compile_file(path, [engine: Wyvern.SuperSmartEngine]))
-      result
-    end
-    {result, _} = Code.eval_quoted(q, [], file: filename)
-    result
+    {quoted, _} = SEEx.compile_file(path, config, [engine: Wyvern.SuperSmartEngine])
+    quoted
+    #quote context: nil do
+      #unquote(@common_imports)
+      #unquote(if config[:ext] == "html", do: @html_imports)
+      #unquote(quoted)
+    #end
   end
+
 
   defp make_filename(name, config, opts \\ []) do
     filename = if String.contains?(name, ".") do

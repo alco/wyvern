@@ -1,6 +1,8 @@
 defmodule WyvernTest.HTML do
   use ExUnit.Case
 
+  import Wyvern.TestHelpers
+
   test "full-blown html" do
     model = %{
       title: "Test Page",
@@ -17,8 +19,6 @@ defmodule WyvernTest.HTML do
 
     assert result == expected
   end
-
-  defp views_root, do: Path.join([System.cwd(), "test", "fixtures"])
 end
 
 defmodule WyvernTest.HTMLHelpers do
