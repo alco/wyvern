@@ -19,6 +19,31 @@ defmodule WyvernTest.Templates do
     config = [views_root: views_root, model: [name: "people"]]
     assert Wyvern.render_view("basic", config) == "Hello people!\n"
   end
+
+  test "template logic" do
+    template = """
+    I have these:<%= for i <- model.items do %>
+      <%= i %>
+    <% end %>
+    Also see "<%= model.thing %>".
+    """
+
+    expected = """
+    I have these:
+      1
+
+      2
+
+      3
+
+    Also see "hello".
+    """
+
+    config = [model: %{items: [1,2,3], thing: "hello"}]
+
+    assert Wyvern.render_view({:inline, template}, config)
+           == expected
+  end
 end
 
 defmodule WyvernTest.Layers do

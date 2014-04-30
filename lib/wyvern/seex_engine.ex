@@ -60,5 +60,26 @@ defmodule Wyvern.SuperSmartEngine do
     Wyvern.render_partial(partial, config)
   end
 
+  defp transform({f, meta, args}, _config) do
+    {{f, meta, strip_args(args)}, []}
+  end
+
   defp transform(other, _config), do: {other, []}
+
+
+  defp strip_args(nil), do: nil
+  defp strip_args([]), do: []
+  defp strip_args(a) when is_atom(a), do: a
+
+  defp strip_args(args), do:
+    strip_args(args, [])
+
+  defp strip_args([], acc), do:
+    Enum.reverse(acc)
+
+  defp strip_args([[do: {quoted, _}] | rest], acc), do:
+    strip_args(rest, [[do: quoted] | acc])
+
+  defp strip_args([other|rest], acc), do:
+    strip_args(rest, [other|acc])
 end
