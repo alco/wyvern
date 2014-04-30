@@ -50,7 +50,7 @@ defmodule WyvernTest.Layers do
            == "all the people love some people"
   end
 
-  test "layers with sections" do
+  test "layers with fragments" do
     base = """
     Hello world. <%= yield :middle %> Interlude. <%= yield %> Footer.
     """
@@ -83,7 +83,7 @@ defmodule WyvernTest.Layers do
            == "top level"
   end
 
-  test "transitive sections" do
+  test "transitive fragments" do
     layers = [
       {:inline, "top level <%= yield :extra %>"},
       {:inline, "middle level"},
@@ -93,7 +93,7 @@ defmodule WyvernTest.Layers do
            == "top level hello"
   end
 
-  test "concatenating sections" do
+  test "concatenating fragments" do
     layers = [
       {:inline, "top level <%= yield :extra %>"},
       {:inline, "middle level <% content_for :extra do %>hello middle<% end %>"},
@@ -103,7 +103,7 @@ defmodule WyvernTest.Layers do
            == "top level hello middlehello bottom"
   end
 
-  test "interleaving sections" do
+  test "interleaving fragments" do
     layers = [
       {:inline, "top level <%= yield :extra %> <%= yield %>"},
       {:inline, "middle level <% content_for :extra do %>hello middle<% end %> <%= yield :extra %>"},

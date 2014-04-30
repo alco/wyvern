@@ -25,14 +25,14 @@ defmodule Wyvern do
     layers = opts[:layers]
     config = Keyword.merge(@default_config, config)
 
-    {quoted, fragments} =
+    stages =
       layers
-      |> Enum.reduce({[], []}, fn view, {qs, fs} ->
-        {quoted, new_fragments} = preprocess_template(view, config)
-        {[quoted|qs], Wyvern.View.Helpers.merge_fragments(fs, new_fragments)}
+      |> Enum.reduce([], fn view, stages ->
+        s = preprocess_template(view, config)
+        [s|stages]
       end)
 
-    render_template(quoted, model, fragments, config, nil)
+    render_template(stages, model, [], config, nil)
   end
 
   defp preprocess_template({:inline, view}, _config) do
@@ -49,16 +49,16 @@ defmodule Wyvern do
     content
   end
 
-  defp render_template([quoted|rest], model, fragments, config, content) do
+  defp render_template([{quoted, stage_frags}|rest], model, fragments, config, content) do
     quoted = replace_fragments(quoted, fragments)
-
     q = quote context: nil do
       unquote(@common_imports)
       unquote(if config[:ext] == "html", do: @html_imports)
       unquote(quoted)
     end
-    {result, _} = Code.eval_quoted(q, [model: model, _fragments: fragments, _content: content])
-    render_template(rest, model, fragments, config, result)
+    {result, _} = Code.eval_quoted(q, [model: model, _content: content])
+    new_fragments = Wyvern.View.Helpers.merge_fragments(stage_frags, fragments)
+    render_template(rest, model, new_fragments, config, result)
   end
 
 
