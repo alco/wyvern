@@ -1,9 +1,5 @@
 defmodule Wyvern do
-  @templates_root "lib/:app/views/templates"
-
   @default_config [
-    partials_root: "lib/:app/views/partials",
-    views_root: "lib/:app/views",
     ext: "html",
     engine: :eex,
   ]
@@ -41,7 +37,7 @@ defmodule Wyvern do
 
   defp preprocess_template(name, config) do
     {filename, config} = make_filename(name, config)
-    path = Path.join(config[:views_root], filename)
+    path = Path.join(get_views_root(config), filename)
     SEEx.compile_file(path, config, [engine: Wyvern.SuperSmartEngine])
   end
 
@@ -79,7 +75,7 @@ defmodule Wyvern do
   def render_partial(name, config) do
     config = Keyword.merge(@default_config, config || [])
     {filename, _config} = make_filename(name, config, partial: true)
-    path = Path.join(config[:partials_root], filename)
+    path = Path.join(get_partials_root(config), filename)
 
     SEEx.compile_file(path, config, [engine: Wyvern.SuperSmartEngine])
   end
@@ -113,4 +109,15 @@ defmodule Wyvern do
   end
 
   defp map_engine(:eex), do: "eex"
+
+  defp get_views_root(config), do:
+    config[:views_root] || "lib/#{Mix.Project.config[:app]}/views"
+
+  defp get_partials_root(config) do
+    if path = config[:partials_root] do
+      path
+    else
+      Path.join(get_views_root(config), "partials")
+    end
+  end
 end

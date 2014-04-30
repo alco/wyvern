@@ -16,7 +16,7 @@ defmodule WyvernTest.HTML do
     """
     layers = ["layout", {:inline, sub_template}]
 
-    config = [views_root: views_root, partials_root: partials_root]
+    config = [views_root: views_root]
     result = Wyvern.render_view(model, [layers: layers], config)
     expected = File.read!(Path.join(views_root, "layout_rendered.html.eex"))
 

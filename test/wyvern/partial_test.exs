@@ -21,7 +21,7 @@ defmodule WyvernTest.Partials do
     """
 
     layers = [layers: [{:inline, template}]]
-    config = [partials_root: partials_root]
+    config = [views_root: views_root]
     assert Wyvern.render_view([name: "people"], layers, config)
            == result
   end
@@ -33,7 +33,7 @@ defmodule WyvernTest.Partials do
     ]
     result = "Hello, This content is from :content:\n<sample content>\n"
 
-    assert Wyvern.render_view([], [layers: layers], [partials_root: partials_root])
+    assert Wyvern.render_view([], [layers: layers], [views_root: views_root])
            == result
   end
 
@@ -44,7 +44,7 @@ defmodule WyvernTest.Partials do
     ]
     result = "Hello, This content is from :content:\ncustom content\n"
 
-    assert Wyvern.render_view([], [layers: layers], [partials_root: partials_root])
+    assert Wyvern.render_view([], [layers: layers], [views_root: views_root])
            == result
   end
 end
