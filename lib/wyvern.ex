@@ -18,6 +18,17 @@ defmodule Wyvern do
 
 
   def render_view(layers, config \\ []) do
+    quoted = template_to_quoted(layers, config)
+    render_quoted(quoted, config)
+  end
+
+
+  def compile_view(layers, config \\ []) do
+    template_to_quoted(layers, config)
+  end
+
+
+  defp template_to_quoted(layers, config) do
     layers = List.wrap(layers)
     config = Keyword.merge(@default_config, config)
 
@@ -32,7 +43,13 @@ defmodule Wyvern do
 
     stages = collect_fragment_messages([], [])
 
-    render_template(stages, config[:model], [], config, nil)
+    render_template(stages, [], config, nil)
+  end
+
+
+  defp render_quoted(quoted, config) do
+    {result, _} = Code.eval_quoted(quoted, [model: config[:model]])
+    result
   end
 
 
@@ -70,32 +87,36 @@ defmodule Wyvern do
   end
 
 
-  defp render_template([], _model, _fragments, _config, content) do
+  defp render_template([], _fragments, _config, content) do
     content
   end
 
-  defp render_template([{quoted, stage_frags}|rest], model, fragments, config, content) do
-    quoted = replace_fragments(quoted, fragments)
+  defp render_template([{quoted, stage_frags}|rest], fragments, config, content) do
+    quoted = replace_fragments(quoted, fragments, content)
     q = quote context: nil do
       unquote(@common_imports)
       unquote(if config[:ext] == "html", do: @html_imports)
       unquote(quoted)
     end
-    {result, _} = Code.eval_quoted(q, [model: model, _content: content, _config: config])
+    #{result, _} = Code.eval_quoted(q, [model: model, _content: content, _config: config])
     new_fragments = Wyvern.View.Helpers.merge_fragments(stage_frags, fragments)
-    render_template(rest, model, new_fragments, config, result)
+    render_template(rest, new_fragments, config, q)
   end
 
 
-  defp replace_fragments({f, meta, args}, fragments) when is_list(args) do
-    {f, meta, Enum.map(args, &replace_fragments(&1, fragments))}
+  defp replace_fragments({f, meta, args}, fragments, content) when is_list(args) do
+    {f, meta, Enum.map(args, &replace_fragments(&1, fragments, content))}
   end
 
-  defp replace_fragments({:yield, section}, fragments) do
+  defp replace_fragments({:yield, nil}, _fragments, content) do
+    content
+  end
+
+  defp replace_fragments({:yield, section}, fragments, _content) do
     fragments[section]
   end
 
-  defp replace_fragments(other, _) do
+  defp replace_fragments(other, _, _) do
     other
   end
 
