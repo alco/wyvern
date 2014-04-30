@@ -21,8 +21,7 @@ defmodule WyvernTest.Fragments do
       {:inline, base},
       {:inline, section},
     ]
-    assert Wyvern.render_view([], [layers: layers])
-           == result
+    assert Wyvern.render_view(layers) == result
   end
 
   test "unused layer content" do
@@ -30,7 +29,7 @@ defmodule WyvernTest.Fragments do
       {:inline, "top level"},
       {:inline, "sub level <% content_for :top do %>...<% end %>"},
     ]
-    assert Wyvern.render_view([name: "people"], [layers: layers])
+    assert Wyvern.render_view(layers, model: [name: "people"])
            == "top level"
   end
 
@@ -40,8 +39,7 @@ defmodule WyvernTest.Fragments do
       {:inline, "middle level"},
       {:inline, "bottom level <% content_for :extra do %>hello<% end %>"},
     ]
-    assert Wyvern.render_view([], [layers: layers])
-           == "top level;hello"
+    assert Wyvern.render_view(layers) == "top level;hello"
   end
 
   test "concatenating fragments" do
@@ -50,8 +48,7 @@ defmodule WyvernTest.Fragments do
       {:inline, "middle level,<% content_for :extra do %>hello middle<% end %>"},
       {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
     ]
-    assert Wyvern.render_view([], [layers: layers])
-           == "top level;hello middlehello bottom"
+    assert Wyvern.render_view(layers) == "top level;hello middlehello bottom"
   end
 
   test "interleaving fragments" do
@@ -60,7 +57,7 @@ defmodule WyvernTest.Fragments do
       {:inline, "middle level,<% content_for :extra do %>hello middle<% end %>,<%= yield :extra %>"},
       {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
     ]
-    assert Wyvern.render_view([], [layers: layers])
+    assert Wyvern.render_view(layers)
            == "top level;hello middlehello bottom;middle level,,hello bottom"
   end
 
@@ -70,7 +67,7 @@ defmodule WyvernTest.Fragments do
       {:inline, "middle level,<%= yield :extra %>,<% content_for :extra do %>hello middle<% end %>"},
       {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
     ]
-    assert Wyvern.render_view([], [layers: layers])
+    assert Wyvern.render_view(layers)
            == "top level;hello middlehello bottom;middle level,hello bottom,"
   end
 end

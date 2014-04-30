@@ -17,8 +17,8 @@ defmodule Wyvern do
   end)
 
 
-  def render_view(model, opts, config \\ []) do
-    layers = opts[:layers]
+  def render_view(layers, config \\ []) do
+    layers = List.wrap(layers)
     config = Keyword.merge(@default_config, config)
 
     stages =
@@ -28,7 +28,7 @@ defmodule Wyvern do
         [s|stages]
       end)
 
-    render_template(stages, model, [], config, nil)
+    render_template(stages, config[:model], [], config, nil)
   end
 
   defp preprocess_template({:inline, view}, config) do

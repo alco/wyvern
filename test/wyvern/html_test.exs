@@ -16,8 +16,8 @@ defmodule WyvernTest.HTML do
     """
     layers = ["layout", {:inline, sub_template}]
 
-    config = [views_root: views_root]
-    result = Wyvern.render_view(model, [layers: layers], config)
+    config = [views_root: views_root, model: model]
+    result = Wyvern.render_view(layers, config)
     expected = File.read!(Path.join(views_root, "layout_rendered.html.eex"))
 
     assert result == expected
@@ -78,7 +78,7 @@ defmodule WyvernTest.HTMLHelpers do
     End.
     """
 
-    assert Wyvern.render_view([scripts: scripts, styles: styles], [layers: [{:inline, template}]])
+    assert Wyvern.render_view({:inline, template}, model: [scripts: scripts, styles: styles])
            == result
   end
 
@@ -93,18 +93,18 @@ defmodule WyvernTest.HTMLHelpers do
 
   test "link helper in template" do
     template = ~s'...<%= link_to "/", "Home" %>...'
-    assert Wyvern.render_view([], layers: [{:inline, template}])
+    assert Wyvern.render_view({:inline, template})
            == ~s'...<a href="/">Home</a>...'
 
     template = ~s'...<%= link_to "/", "Home", id: "home" %>...'
-    assert Wyvern.render_view([], layers: [{:inline, template}])
+    assert Wyvern.render_view({:inline, template})
            == ~s'...<a href="/" id="home">Home</a>...'
   end
 
   test "link in non-html template" do
     template = ~s'...<%= link_to "/", "Home" %>...'
     assert_raise CompileError, fn ->
-      Wyvern.render_view([], [layers: [{:inline, template}]], [ext: "txt"])
+      Wyvern.render_view({:inline, template}, ext: "txt")
     end
   end
 end

@@ -5,19 +5,19 @@ defmodule WyvernTest.Templates do
 
   test "basic string templates" do
     template = "Hello world!"
-    assert Wyvern.render_view([], layers: [{:inline, template}])
+    assert Wyvern.render_view({:inline, template})
            == "Hello world!"
 
     template = "Hello <%= model[:name] %>!"
-    assert Wyvern.render_view([], layers: [{:inline, template}])
+    assert Wyvern.render_view({:inline, template})
            == "Hello !"
-    assert Wyvern.render_view([name: "people"], layers: [{:inline, template}])
+    assert Wyvern.render_view({:inline, template}, model: [name: "people"])
            == "Hello people!"
   end
 
   test "basic file template" do
-    assert Wyvern.render_view([name: "people"], [layers: ["basic"]], [views_root: views_root])
-           == "Hello people!\n"
+    config = [views_root: views_root, model: [name: "people"]]
+    assert Wyvern.render_view("basic", config) == "Hello people!\n"
   end
 end
 
@@ -30,14 +30,14 @@ defmodule WyvernTest.Layers do
       {:inline, "2 <%= yield %>"},
       {:inline, "3"},
     ]
-    assert Wyvern.render_view([], [layers: layers]) == "1 2 3"
+    assert Wyvern.render_view(layers) == "1 2 3"
 
     layers = [
       {:inline, "1 <%= yield %>"},
       {:inline, "2 <%= yield %>"},
       {:inline, "3 <%= yield %>"},
     ]
-    assert Wyvern.render_view([], [layers: layers]) == "1 2 3 "
+    assert Wyvern.render_view(layers) == "1 2 3 "
   end
 
   test "layers share the model" do
@@ -46,7 +46,7 @@ defmodule WyvernTest.Layers do
       {:inline, "love some <%= yield %>"},
       {:inline, "<%= model[:name] %>"},
     ]
-    assert Wyvern.render_view([name: "people"], [layers: layers])
+    assert Wyvern.render_view(layers, model: [name: "people"])
            == "all the people love some people"
   end
 
@@ -56,7 +56,7 @@ defmodule WyvernTest.Layers do
       {:inline, "middle level"},
       {:inline, "bottom level"},
     ]
-    assert Wyvern.render_view([], [layers: layers])
+    assert Wyvern.render_view(layers)
            == "top level middle level"
   end
 end
