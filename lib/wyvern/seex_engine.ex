@@ -7,7 +7,7 @@ defmodule Wyvern.SuperSmartEngine do
 
   def handle_text(buffer, text, state) do
     #IO.puts "handle_text ... #{inspect text}"
-    q = quote do
+    q = quote context: nil do
       unquote(buffer) <> unquote(text)
     end
     { q, state }
@@ -19,13 +19,13 @@ defmodule Wyvern.SuperSmartEngine do
 
     q = case marker do
       "=" ->
-        quote do
+        quote context: nil do
           tmp = unquote(buffer)
           tmp <> to_string(unquote(expr))
         end
 
       "" ->
-        quote do
+        quote context: nil do
           tmp = unquote(buffer)
           unquote(expr)
           tmp

@@ -10,10 +10,8 @@ defmodule WyvernTest.HTML do
       scripts: [inline: ~s'console.log("hi")', src: "/ui.js"],
     }
 
-    sub_template = """
-    <p>Main content</p><% content_for :head do %><!-- additional head content --><% end %>
-    <%= include "more_content" %>
-    """
+    sub_template = File.read!(Path.join([views_root, "templates", "index.html.eex"]))
+
     layers = ["layout", {:inline, sub_template}]
 
     config = [views_root: views_root, model: model]

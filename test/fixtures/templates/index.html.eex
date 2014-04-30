@@ -1,0 +1,2 @@
+<p>Main content</p><% content_for :head do %><!-- additional head content --><% end %>
+<%= include "more_content" %>

@@ -34,10 +34,14 @@ defmodule Wyvern do
 
     pid = self()
     spawn(fn ->
-      Enum.each(layers, fn view ->
-        s = preprocess_template(view, {pid, config})
-        send(pid, {:stage, s})
-      end)
+      try do
+        Enum.each(layers, fn view ->
+          s = preprocess_template(view, {pid, config})
+          send(pid, {:stage, s})
+        end)
+      rescue
+        e -> send(pid, {:exception, e})
+      end
       send(pid, :finished)
     end)
 
@@ -67,6 +71,8 @@ defmodule Wyvern do
           raise RuntimeError, message: "Inconsistent message flow"
         end
         stages
+
+      {:exception, e} -> raise e
     end
   end
 
