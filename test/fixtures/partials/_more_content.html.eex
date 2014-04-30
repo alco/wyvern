@@ -1,0 +1,1 @@
+OK<% content_for :head do %><style id="from partial"></style><% end %>

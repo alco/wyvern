@@ -11,12 +11,15 @@
     <link href="/css/style1.css" rel="stylesheet">
 <link href="/css/style2.css" rel="stylesheet">
 
-    <!-- additional head content -->
+    <!-- additional head content --><style id="from partial"></style>
   </head>
 
   <body>
     <div id="mainContainer">
       <p>Main content</p>
+OK
+
+
     </div>
 
     <!-- Scripts -->

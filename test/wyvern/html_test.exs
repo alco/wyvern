@@ -10,11 +10,14 @@ defmodule WyvernTest.HTML do
       scripts: [inline: ~s'console.log("hi")', src: "/ui.js"],
     }
 
-    sub_template =
-      "<p>Main content</p><% content_for :head do %><!-- additional head content --><% end %>"
+    sub_template = """
+    <p>Main content</p><% content_for :head do %><!-- additional head content --><% end %>
+    <%= include "more_content" %>
+    """
     layers = ["layout", {:inline, sub_template}]
 
-    result = Wyvern.render_view(model, [layers: layers], [views_root: views_root])
+    config = [views_root: views_root, partials_root: partials_root]
+    result = Wyvern.render_view(model, [layers: layers], config)
     expected = File.read!(Path.join(views_root, "layout_rendered.html.eex"))
 
     assert result == expected
