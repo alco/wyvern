@@ -47,7 +47,17 @@ defmodule Wyvern do
 
     stages = collect_fragment_messages([], [])
 
-    render_template(stages, [], config, nil)
+    quoted = build_template(stages, [], nil)
+    wrap_quoted(quoted, config)
+  end
+
+
+  defp wrap_quoted(quoted, config) do
+    quote do
+      unquote(@common_imports)
+      unquote(if config[:ext] == "html", do: @html_imports)
+      unquote(quoted)
+    end
   end
 
 
@@ -93,20 +103,14 @@ defmodule Wyvern do
   end
 
 
-  defp render_template([], _fragments, _config, content) do
+  defp build_template([], _fragments, content) do
     content
   end
 
-  defp render_template([{quoted, stage_frags}|rest], fragments, config, content) do
+  defp build_template([{quoted, stage_frags}|rest], fragments, content) do
     quoted = replace_fragments(quoted, fragments, content)
-    q = quote context: nil do
-      unquote(@common_imports)
-      unquote(if config[:ext] == "html", do: @html_imports)
-      unquote(quoted)
-    end
-    #{result, _} = Code.eval_quoted(q, [model: model, _content: content, _config: config])
     new_fragments = Wyvern.View.Helpers.merge_fragments(stage_frags, fragments)
-    render_template(rest, new_fragments, config, q)
+    build_template(rest, new_fragments, quoted)
   end
 
 
