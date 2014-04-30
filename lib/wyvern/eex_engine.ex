@@ -7,44 +7,59 @@ defmodule Wyvern.SuperSmartEngine do
     body
   end
 
-  def handle_text(buffer, text) do
+  def handle_text("", text) do
+    handle_text({"", []}, text)
+  end
+
+  def handle_text({buffer, fragments}, text) do
     #IO.puts "handle_text ... #{inspect text}"
-    quote do
+    q = quote do
       unquote(buffer) <> unquote(text)
     end
+    {q, fragments}
   end
 
-  def handle_expr(buffer, "=", expr) do
+  def handle_expr("", marker, expr) do
+    handle_expr({"", []}, marker, expr)
+  end
+
+  def handle_expr({buffer, fragments}, marker, expr) do
     #IO.puts "handle_expr ... \"=\" #{inspect expr}"
-    expr = transform(expr)
-
-    quote do
-      #IO.puts "matching = #{inspect buffer}"
-      tmp = unquote(buffer)
-      tmp <> to_string(unquote(expr))
+    {expr, fragment} = case transform(expr) do
+      {:fragment, fragment} -> {nil, fragment}
+      quoted                -> {quoted, []}
     end
-  end
 
-  def handle_expr(buffer, "", expr) do
-    #IO.puts "handle_expr ... \"\" #{inspect expr}"
-    expr = transform(expr)
+    q = case marker do
+      "=" ->
+        quote do
+          tmp = unquote(buffer)
+          tmp <> to_string(unquote(expr))
+        end
 
-    quote do
-      #IO.puts "matching .."
-      tmp = unquote(buffer)
-      unquote(expr)
-      tmp
+      "" ->
+        quote do
+          tmp = unquote(buffer)
+          unquote(expr)
+          tmp
+        end
     end
+    new_fragments = Wyvern.View.Helpers.merge_fragments(fragments, fragment)
+    {q, new_fragments}
   end
 
   defp transform({:yield, _, nil}) do
     quote context: nil do
-      _context[:content]
+      _content
     end
   end
 
   defp transform({:yield, _, [section]}) do
-    Process.get({:content, section})
+    {:yield, section}
+  end
+
+  defp transform({:content_for, _, [section, [do: {quoted, _}]]}) do
+    {:fragment, [{section, quoted}]}
   end
 
   defp transform(other), do: other

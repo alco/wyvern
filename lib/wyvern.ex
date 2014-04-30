@@ -22,62 +22,56 @@ defmodule Wyvern do
 
 
   def render_view(model, opts, config \\ []) do
-    parent = self()
-    ref = make_ref()
-
-    spawn(fn ->
-      try do
-        send(parent, {:ok, ref, do_render_view(model, opts, config)})
-      rescue
-        e -> send(parent, {:exception, ref, e})
-      end
-    end)
-
-    receive do
-      {:ok, ^ref, result} -> result
-      {:exception, ^ref, e} -> raise e
-    end
-  end
-
-  defp do_render_view(model, opts, config) do
     layers = opts[:layers]
     config = Keyword.merge(@default_config, config)
-    context =
+
+    {quoted, fragments} =
       layers
-      |> Enum.reverse()
-      |> Enum.reduce([content: nil, model: model], fn view, context ->
-        render_template(view, context, config)
+      |> Enum.reduce({[], []}, fn view, {qs, fs} ->
+        {quoted, new_fragments} = preprocess_template(view, config)
+        {[quoted|qs], Wyvern.View.Helpers.merge_fragments(fs, new_fragments)}
       end)
-    context[:content]
+
+    render_template(quoted, model, fragments, config, nil)
   end
 
-  defp render_template({:inline, view}, context, config) do
-    q = quote context: nil do
-      unquote(@common_imports)
-      unquote(if config[:ext] == "html", do: @html_imports)
-      unquote(EEx.compile_string(view, [engine: Wyvern.SuperSmartEngine]))
-    end
-    {result, _} = Code.eval_quoted(q, [model: context[:model], _context: context])
-    Keyword.put(context, :content, result)
+  defp preprocess_template({:inline, view}, _config) do
+    EEx.compile_string(view, [engine: Wyvern.SuperSmartEngine])
   end
 
-  defp render_template(name, context, config) do
+  defp preprocess_template(name, config) do
     {filename, config} = make_filename(name, config)
     path = Path.join(config[:views_root], filename)
+    EEx.compile_file(path, [engine: Wyvern.SuperSmartEngine])
+  end
 
-    #path = if String.contains?(name, "/") do
-      #Path.join(@views_root, filename)
-    #else
-      #Path.join(@templates_root, filename)
-    #end
+  defp render_template([], _model, _fragments, _config, content) do
+    content
+  end
+
+  defp render_template([quoted|rest], model, fragments, config, content) do
+    quoted = replace_fragments(quoted, fragments)
 
     q = quote context: nil do
       unquote(@common_imports)
       unquote(if config[:ext] == "html", do: @html_imports)
-      unquote(EEx.compile_file(path, [engine: Wyvern.SuperSmartEngine]))
+      unquote(quoted)
     end
-    {result, _} = Code.eval_quoted(q, [model: context[:model], _context: context], file: filename)
-    Keyword.put(context, :content, result)
+    {result, _} = Code.eval_quoted(q, [model: model, _fragments: fragments, _content: content])
+    render_template(rest, model, fragments, config, result)
+  end
+
+
+  defp replace_fragments({f, meta, args}, fragments) when is_list(args) do
+    {f, meta, Enum.map(args, &replace_fragments(&1, fragments))}
+  end
+
+  defp replace_fragments({:yield, section}, fragments) do
+    fragments[section]
+  end
+
+  defp replace_fragments(other, _) do
+    other
   end
 
 
@@ -89,7 +83,8 @@ defmodule Wyvern do
     q = quote context: nil do
       unquote(@common_imports)
       unquote(if config[:ext] == "html", do: @html_imports)
-      unquote(EEx.compile_file(path, [engine: Wyvern.SuperSmartEngine]))
+      {result, _} = unquote(EEx.compile_file(path, [engine: Wyvern.SuperSmartEngine]))
+      result
     end
     {result, _} = Code.eval_quoted(q, [], file: filename)
     result

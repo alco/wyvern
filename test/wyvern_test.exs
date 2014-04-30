@@ -93,25 +93,35 @@ defmodule WyvernTest.Layers do
            == "top level hello"
   end
 
-  test "overriding sections" do
+  test "concatenating sections" do
     layers = [
       {:inline, "top level <%= yield :extra %>"},
       {:inline, "middle level <% content_for :extra do %>hello middle<% end %>"},
       {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
     ]
     assert Wyvern.render_view([], [layers: layers])
-           == "top level hello middle"
+           == "top level hello middlehello bottom"
   end
 
-  #test "transitive content" do
-    #layers = [
-      #{:inline, "top level <%= yield %>"},
-      #{:inline, "middle level"},
-      #{:inline, "bottom level"},
-    #]
-    #assert Wyvern.render_view([], [layers: layers])
-           #== "top level middle levelbottom level"
-  #end
+  test "interleaving sections" do
+    layers = [
+      {:inline, "top level <%= yield :extra %> <%= yield %>"},
+      {:inline, "middle level <% content_for :extra do %>hello middle<% end %> <%= yield :extra %>"},
+      {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
+    ]
+    assert Wyvern.render_view([], [layers: layers])
+           == "top level hello middlehello bottom middle level  hello bottom"
+  end
+
+  test "disjointed content" do
+    layers = [
+      {:inline, "top level <%= yield %>"},
+      {:inline, "middle level"},
+      {:inline, "bottom level"},
+    ]
+    assert Wyvern.render_view([], [layers: layers])
+           == "top level middle level"
+  end
 
   test "full-blown html" do
     model = %{
