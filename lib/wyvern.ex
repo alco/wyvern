@@ -81,13 +81,7 @@ defmodule Wyvern do
     {filename, _config} = make_filename(name, config, partial: true)
     path = Path.join(config[:partials_root], filename)
 
-    {quoted, _} = SEEx.compile_file(path, config, [engine: Wyvern.SuperSmartEngine])
-    quoted
-    #quote context: nil do
-      #unquote(@common_imports)
-      #unquote(if config[:ext] == "html", do: @html_imports)
-      #unquote(quoted)
-    #end
+    SEEx.compile_file(path, config, [engine: Wyvern.SuperSmartEngine])
   end
 
 
