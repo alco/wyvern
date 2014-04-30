@@ -85,32 +85,42 @@ defmodule WyvernTest.Layers do
 
   test "transitive fragments" do
     layers = [
-      {:inline, "top level <%= yield :extra %>"},
+      {:inline, "top level;<%= yield :extra %>"},
       {:inline, "middle level"},
       {:inline, "bottom level <% content_for :extra do %>hello<% end %>"},
     ]
     assert Wyvern.render_view([], [layers: layers])
-           == "top level hello"
+           == "top level;hello"
   end
 
   test "concatenating fragments" do
     layers = [
-      {:inline, "top level <%= yield :extra %>"},
-      {:inline, "middle level <% content_for :extra do %>hello middle<% end %>"},
+      {:inline, "top level;<%= yield :extra %>"},
+      {:inline, "middle level,<% content_for :extra do %>hello middle<% end %>"},
       {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
     ]
     assert Wyvern.render_view([], [layers: layers])
-           == "top level hello middlehello bottom"
+           == "top level;hello middlehello bottom"
   end
 
   test "interleaving fragments" do
     layers = [
-      {:inline, "top level <%= yield :extra %> <%= yield %>"},
-      {:inline, "middle level <% content_for :extra do %>hello middle<% end %> <%= yield :extra %>"},
+      {:inline, "top level;<%= yield :extra %>;<%= yield %>"},
+      {:inline, "middle level,<% content_for :extra do %>hello middle<% end %>,<%= yield :extra %>"},
       {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
     ]
     assert Wyvern.render_view([], [layers: layers])
-           == "top level hello middlehello bottom middle level  hello bottom"
+           == "top level;hello middlehello bottom;middle level,,hello bottom"
+  end
+
+  test "immediate fragments" do
+    layers = [
+      {:inline, "top level;<%= yield :extra %>;<%= yield %>"},
+      {:inline, "middle level,<%= yield :extra %>,<% content_for :extra do %>hello middle<% end %>"},
+      {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
+    ]
+    assert Wyvern.render_view([], [layers: layers])
+           == "top level;hello middlehello bottom;middle level,hello bottom,"
   end
 
   test "disjointed content" do
