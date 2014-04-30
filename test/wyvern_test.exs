@@ -25,7 +25,12 @@ defmodule WyvernTest.Templates do
     I have these:<%= for i <- model.items do %>
       <%= i %>
     <% end %>
-    Also see "<%= model.thing %>".
+    <%= if model.thing do %>
+      Hello.<% x = 1 %>
+    <% else %>
+      Bye.<% x = 2 %>
+    <% end %>
+    Also see "<%= x %>".
     """
 
     expected = """
@@ -36,10 +41,13 @@ defmodule WyvernTest.Templates do
 
       3
 
-    Also see "hello".
+
+      Bye.
+
+    Also see "2".
     """
 
-    config = [model: %{items: [1,2,3], thing: "hello"}]
+    config = [model: %{items: [1,2,3], thing: false}]
 
     assert Wyvern.render_view({:inline, template}, config)
            == expected

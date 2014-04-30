@@ -21,21 +21,44 @@ defmodule Wyvern do
     layers = List.wrap(layers)
     config = Keyword.merge(@default_config, config)
 
-    stages =
-      layers
-      |> Enum.reduce([], fn view, stages ->
-        s = preprocess_template(view, config)
-        [s|stages]
+    pid = self()
+    spawn(fn ->
+      Enum.each(layers, fn view ->
+        s = preprocess_template(view, {pid, config})
+        send(pid, {:stage, s})
       end)
+      send(pid, :finished)
+    end)
+
+    stages = collect_fragment_messages([], [])
 
     render_template(stages, config[:model], [], config, nil)
   end
 
-  defp preprocess_template({:inline, view}, config) do
-    SEEx.compile_string(view, config, [engine: Wyvern.SuperSmartEngine])
+
+  defp collect_fragment_messages(fragments, stages) do
+    receive do
+      {:fragment, f} ->
+        new_fragments = Wyvern.View.Helpers.merge_fragments(fragments, f)
+        collect_fragment_messages(new_fragments, stages)
+
+      {:stage, s} ->
+        collect_fragment_messages([], [{s, fragments}|stages])
+
+      :finished ->
+        if fragments != [] do
+          raise RuntimeError, message: "Inconsistent message flow"
+        end
+        stages
+    end
   end
 
-  defp preprocess_template(name, config) do
+
+  defp preprocess_template({:inline, view}, state) do
+    SEEx.compile_string(view, state, [engine: Wyvern.SuperSmartEngine])
+  end
+
+  defp preprocess_template(name, {_pid, config}=state) do
     {filename, config} = make_filename(name, config)
     base_path = if String.contains?(name, "/") do
       get_views_root(config)
@@ -43,7 +66,7 @@ defmodule Wyvern do
       get_templates_root(config)
     end
     path = Path.join(base_path, filename)
-    SEEx.compile_file(path, config, [engine: Wyvern.SuperSmartEngine])
+    SEEx.compile_file(path, state, [engine: Wyvern.SuperSmartEngine])
   end
 
 
@@ -77,12 +100,12 @@ defmodule Wyvern do
   end
 
 
-  def render_partial(name, config) do
+  def render_partial(name, {_pid, config}=state) do
     config = Keyword.merge(@default_config, config || [])
     {filename, _config} = make_filename(name, config, partial: true)
     path = Path.join(get_partials_root(config), filename)
 
-    SEEx.compile_file(path, config, [engine: Wyvern.SuperSmartEngine])
+    SEEx.compile_file(path, state, [engine: Wyvern.SuperSmartEngine])
   end
 
 
