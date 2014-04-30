@@ -37,7 +37,7 @@ defmodule Wyvern do
 
   defp preprocess_template(name, config) do
     {filename, config} = make_filename(name, config)
-    path = Path.join(get_views_root(config), filename)
+    path = Path.join(get_templates_root(config), filename)
     SEEx.compile_file(path, config, [engine: Wyvern.SuperSmartEngine])
   end
 
@@ -112,6 +112,14 @@ defmodule Wyvern do
 
   defp get_views_root(config), do:
     config[:views_root] || "lib/#{Mix.Project.config[:app]}/views"
+
+  defp get_templates_root(config) do
+    if path = config[:templates_root] do
+      path
+    else
+      Path.join(get_views_root(config), "templates")
+    end
+  end
 
   defp get_partials_root(config) do
     if path = config[:partials_root] do
