@@ -21,7 +21,8 @@ defmodule Wyvern.SuperSmartEngine do
 
   def handle_expr({buffer, fragments}, marker, expr, config) do
     #IO.puts "handle_expr ... \"=\" #{inspect expr}"
-    {expr, new_fragments} = transform(expr, fragments, config)
+    {expr, new_fragments} = transform(expr, config)
+    new_fragments = Wyvern.View.Helpers.merge_fragments(fragments, new_fragments)
 
     q = case marker do
       "=" ->
@@ -40,26 +41,24 @@ defmodule Wyvern.SuperSmartEngine do
     { {q, new_fragments}, config }
   end
 
-  defp transform({:yield, _, nil}, fragments, _config) do
+  defp transform({:yield, _, nil}, _config) do
     q = quote context: nil do
       _content
     end
-    {q, fragments}
+    {q, []}
   end
 
-  defp transform({:yield, _, [section]}, fragments, _config) do
-    { {:yield, section}, fragments }
+  defp transform({:yield, _, [section]}, _config) do
+    { {:yield, section}, [] }
   end
 
-  defp transform({:content_for, _, [section, [do: {quoted, _}]]}, fragments, _config) do
-    frag = [{section, quoted}]
-    {nil, Wyvern.View.Helpers.merge_fragments(fragments, frag)}
+  defp transform({:content_for, _, [section, [do: {quoted, _}]]}, _config) do
+    {nil, [{section, quoted}]}
   end
 
-  defp transform({:include, _, [partial]}, fragments, config) do
-    {quoted, partial_fragments} = Wyvern.render_partial(partial, config)
-    {quoted, Wyvern.View.Helpers.merge_fragments(fragments, partial_fragments)}
+  defp transform({:include, _, [partial]}, config) do
+    Wyvern.render_partial(partial, config)
   end
 
-  defp transform(other, fragments, _config), do: {other, fragments}
+  defp transform(other, _config), do: {other, []}
 end
