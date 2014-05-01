@@ -108,21 +108,45 @@ structure when looking for templates:
 
 ```
 layouts/
-  layout.html.eex
+  base.html.eex
 partials/
   _about.html.eex
 templates/
   index.html.eex
 ```
 
-`views_root` is a configuration variable. It is set to `<app root>/lib/<app
+`views_root` is a config variable. It is set to `<app root>/lib/<app
 name>/views` by default.
 
+Assuming that `layout.html.eex` contains a basic structure of an HTML document
+with a `yield` placeholder somewhere in it, we can render the index template as
+follows:
 
+```elixir
+Wyvern.render_view(["layouts/base", "index"])
+```
 
+First, Wyvern looks for the "layouts/base" file. Because its name contains a
+slash, its path is derived directly from the `$views_root` location. The
+`.html.eex` suffix is added based on the current format and template rendering
+engine settings (HTML and EEx, respectively, by default).
 
-First, let's get the terminology straight.
-The dumbest way to render a view
+Thus, it finds and renders the file in `$views_root/layouts/base.html.eex`.
+
+Next, it looks for the "index" file. There are no slahes in the name, so it'll
+look in the `$views_root/$templates_dir/`. `templates_dir` is another config
+variable, set to "templates" by default. In the end it will find the template
+at this path: `$views_root/templates/index.html.eex`.
+
+If `index.html.eex` has a call to the `include` helper (e.g. `<%= include
+"about" %>`), Wyvern will look for a partial named "_about" in the
+`$partials_dir` (which is set to `$views_root/partials` by default).
+
+Partials are rendered exactly as ordinary templates, the difference is only in
+the intent: template files under `templates/` logically correspond to
+application views, while template files under `partials/` contain bits of
+reusable content.
+
 
 ### Compiled views
 
