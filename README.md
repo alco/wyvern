@@ -150,8 +150,32 @@ reusable content.
 
 ### Compiled views
 
-The recommended wa
-In contrast with dynamically rendered templates,
+Now that we have learned the layered rendering pipeline Wyvern is based on,
+it'll be easy to understand how compiled views work.
+
+In a production environment it is generally more convenient and much more
+efficient to have templates precompiled into some intermediate form.
+Afterwards, the only work remaining to be done should be fetching data from the
+supplied model and producing the final rendered content.
+
+Wyvern has direct support for precompiled views backed by Elixir modules. It is
+important to get the terminology right here:
+
+* **templates** are just files written in a templating language (EEx or HAML,
+  for instance)
+
+* **views** are Elixir modules that `use Wyvern.View`, they represent logical
+  pieces of your application
+
+When you have an Elixir module that serves as a Wyvern view, it will precompile
+the content from its corresponding template at your project's compile time and
+it will be much more efficient to render the view at run time.
+
+Plus you'll get other benefits like having one place to keep options specific
+to a particular view and adding helper functions that can be used in templates.
+
+TODO: more content...
+
 
 ### Adding a view server
 
@@ -159,6 +183,8 @@ A view server is a component that keeps centralized information about the view
 hierarchy of your application. Its use is optional, but it can provide a
 convenient way to manage your views in a web framework-less application
 setting.
+
+TODO: more content...
 
 ---
 
