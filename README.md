@@ -193,7 +193,8 @@ setting.
 
 TODO: more content...
 
----
+
+## Use cases
 
 What follows next is a set of different use cases and description of how Wyvern
 applies to them.
