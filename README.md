@@ -30,10 +30,104 @@ application. If you are interested in integrating Wyvern into a web framework
 The complete reference guide can be found in `doc/reference/`.
 
 
-### Dynamic and compiled views
+### Dynamic template rendering
 
-TODO: add content
+The dumbest way to render a template is using the `Wyvern.render_view`
+function:
 
+```elixir
+Wyvern.render_view({:inline, "plain text content"}) |> IO.puts
+---
+plain text content
+```
+
+Data is passed into templates via the `model` parameter.
+
+```elixir
+Wyvern.render_view({:inline, "hello <%= model[:name] %>"}, model: [name: "world"])
+|> IO.puts
+---
+hello world
+```
+
+The first argument to `render_view` can be a text template (passed in as a tuple
+`{:inline, <text>}`), a string (interpreted as a file name), or a list of those
+things.
+
+When passing a list, Wyvern renders it as a list of layers, starting from the
+first one and including into it the specified content from subsequent layers:
+
+```elixir
+layout = "top-level content
+<%= yield %>
+some more content
+
+# content from sublayer:
+<%= yield :extra %>"
+
+index = "main sublayer content
+<% content_for :extra do %>hello from index<% end %>"
+
+Wyvern.render_view(Enum.map([layout, index], &{:inline, &1})) |> IO.puts
+---
+top-level content
+main sublayer content
+
+some more content
+
+# content from sublayer:
+hello from index
+```
+
+When passed in, the model will be shared accross all layers:
+
+```elixir
+top = "hello <%= model[:name] %> and <%= yield :other_name %>"
+sub = "ignored content"
+subsub = "<% content_for :other_name do %>Andrew<% end %>"
+
+config = [model: [name: "world"]]
+Wyvern.render_view(Enum.map([top, sub], &{:inline, &1}), config) |> IO.puts
+---
+hello world and Andrew
+```
+
+Notice that the content from `sub` does not show up in the rendered text because
+`top` does not have a `yield` placeholder.
+
+Wyvern starts rendering from the first layer and treats each layer as a
+blueprint for the expected result. Since `top` does not include any content
+using `yield`, subsequent layer does not get "pasted" into it.
+
+
+### Templates in files
+
+Wyvern is designed to be used as a dependency in projects managed by mix. By
+default it expects your `$views_root` directory to have the following directory
+structure when looking for templates:
+
+```
+layouts/
+  layout.html.eex
+partials/
+  _about.html.eex
+templates/
+  index.html.eex
+```
+
+`views_root` is a configuration variable. It is set to `<app root>/lib/<app
+name>/views` by default.
+
+
+
+
+First, let's get the terminology straight.
+The dumbest way to render a view
+
+### Compiled views
+
+The recommended wa
+In contrast with dynamically rendered templates,
 
 ### Adding a view server
 
