@@ -1,14 +1,14 @@
 defmodule WyvernTest.ViewTest do
+  import Wyvern.TestHelpers
+
   defmodule IndexView do
     use Wyvern.View, [
-      views_root: "test/fixtures",
+      views_root: views_root,
       layers: ["layout", "index"],
     ]
   end
 
   use ExUnit.Case
-
-  import Wyvern.TestHelpers
 
   test "2-level compiled view" do
     model = %{
