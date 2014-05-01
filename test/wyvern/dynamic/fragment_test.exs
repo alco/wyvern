@@ -24,6 +24,20 @@ defmodule WyvernTest.Fragments do
     assert Wyvern.render_view(layers) == result
   end
 
+  test "leftover fragments" do
+    top = "hello <%= model[:name] %> and <%= yield :other_name %>"
+    sub = "ignored content"
+    subsub = "<% content_for :other_name do %>Andrew<% end %>"
+
+    config = [model: [name: "world"]]
+
+    assert Wyvern.render_view(Enum.map([top, sub, subsub], &{:inline, &1}), config)
+           == "hello world and Andrew"
+
+    assert Wyvern.render_view(Enum.map([top, sub], &{:inline, &1}), config)
+           == "hello world and "
+  end
+
   test "unused layer content" do
     layers = [
       {:inline, "top level"},
