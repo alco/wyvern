@@ -7,6 +7,13 @@ It can be used as is to add view rendering capabilities to your web application
 or it can be built upon to provide a full-featured MVC stack.
 
 
+---
+
+**Don't use it. This is a preview release made to serve as food for discussion.**
+
+---
+
+
 ## Goals
 
 Wyvern aims to provide a minimal basis for others to build upon. Hence its
