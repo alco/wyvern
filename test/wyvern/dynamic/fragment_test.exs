@@ -85,4 +85,9 @@ defmodule WyvernTest.Fragments do
     expected = "top level;hello middlehello bottom;middle level,hello bottom,"
     assert Wyvern.render_view(layers) == expected
   end
+
+  test "layout as view" do
+    assert Wyvern.render_view({:inline, "<%= yield %>"}) == ""
+    assert Wyvern.render_view({:inline, "<%= yield :head %>"}) == ""
+  end
 end

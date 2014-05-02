@@ -18,17 +18,17 @@ defmodule Wyvern do
 
 
   def render_view(layers, config \\ []) do
-    quoted = template_to_quoted(layers, config)
-    render_quoted(quoted, config)
+    layers_to_quoted(layers, config)
+    |> render_quoted(config)
   end
 
 
-  def compile_view(layers, config \\ []) do
-    template_to_quoted(layers, config)
+  def compile_layers(layers, config \\ []) do
+    layers_to_quoted(layers, config)
   end
 
 
-  defp template_to_quoted(layers, config) do
+  defp layers_to_quoted(layers, config) do
     layers = List.wrap(layers)
     config = Keyword.merge(@default_config, config)
 
@@ -45,10 +45,10 @@ defmodule Wyvern do
       send(pid, :finished)
     end)
 
-    stages = collect_fragment_messages([], [])
+    {stages, has_yield} = collect_fragment_messages([], [], false)
 
-    quoted = build_template(stages, [], nil)
-    wrap_quoted(quoted, config)
+    quoted = build_template(stages)
+    {wrap_quoted(quoted, config), not has_yield}
   end
 
 
@@ -61,26 +61,34 @@ defmodule Wyvern do
   end
 
 
-  defp render_quoted(quoted, config) do
-    {result, _} = Code.eval_quoted(quoted, [attrs: config[:attrs]])
+  defp render_quoted({quoted, is_leaf}, config) do
+    bindings = if is_leaf do
+      [attrs: config[:attrs]]
+    else
+      [content: nil, fragments: [], attrs: config[:attrs]]
+    end
+    {result, _} = Code.eval_quoted(quoted, bindings)
     result
   end
 
 
-  defp collect_fragment_messages(fragments, stages) do
+  defp collect_fragment_messages(fragments, stages, has_yield) do
     receive do
       {:fragment, f} ->
         new_fragments = Wyvern.View.Helpers.merge_fragments(fragments, f)
-        collect_fragment_messages(new_fragments, stages)
+        collect_fragment_messages(new_fragments, stages, has_yield)
 
       {:stage, s} ->
-        collect_fragment_messages([], [{s, fragments}|stages])
+        collect_fragment_messages([], [{s, fragments}|stages], has_yield)
+
+      :yield ->
+        collect_fragment_messages(fragments, stages, true)
 
       :finished ->
         if fragments != [] do
           raise RuntimeError, message: "Inconsistent message flow"
         end
-        stages
+        {stages, has_yield}
 
       {:exception, e} -> raise e
     end
@@ -102,6 +110,10 @@ defmodule Wyvern do
     SEEx.compile_file(path, state, [engine: Wyvern.SuperSmartEngine])
   end
 
+
+  defp build_template(stages) do
+    build_template(stages, [], nil)
+  end
 
   defp build_template([], _fragments, content) do
     content

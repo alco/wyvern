@@ -35,11 +35,13 @@ defmodule Wyvern.SuperSmartEngine do
   end
 
 
-  defp transform({:yield, _, nil}, _) do
+  defp transform({:yield, _, nil}, {pid, _config}) do
+    send(pid, :yield)
     {:yield, nil}
   end
 
-  defp transform({:yield, _, [section]}, _) do
+  defp transform({:yield, _, [section]}, {pid, _config}) do
+    send(pid, :yield)
     {:yield, section}
   end
 
