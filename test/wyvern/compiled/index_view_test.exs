@@ -17,6 +17,8 @@ defmodule WyvernTest.ViewTest do
       scripts: [inline: ~s'console.log("hi")', src: "/ui.js"],
     }
 
-    assert IndexView.render(attrs) == File.read!(Path.join(views_root, "layout_rendered.html"))
+    result   = IndexView.render(attrs)
+    expected = File.read!(Path.join(views_root, "layout_rendered.html"))
+    assert result == expected
   end
 end

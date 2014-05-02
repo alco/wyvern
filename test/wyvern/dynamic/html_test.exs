@@ -67,7 +67,7 @@ defmodule WyvernTest.HTMLHelpers do
     scripts = [{:inline, "console.log('hi')"}, {:src, "jquery.js"}]
     styles = {:src, "/default.css"}
 
-    result = """
+    expected = """
     Hello.
     <script type="application/javascript">console.log('hi')</script>
     <script src="jquery.js" type="application/javascript"></script>
@@ -76,27 +76,29 @@ defmodule WyvernTest.HTMLHelpers do
     End.
     """
 
-    assert Wyvern.render_view({:inline, template}, attrs: [scripts: scripts, styles: styles])
-           == result
+    result = Wyvern.render_view({:inline, template}, attrs: [scripts: scripts, styles: styles])
+    assert result == expected
   end
 
   test "link helper" do
-    assert H.link_to("/index.html", "Home")
-           == ~s'<a href="/index.html">Home</a>'
-    assert H.link_to("http://example.com", " example ")
-           == ~s'<a href="http://example.com"> example </a>'
-    assert H.link_to("#", " example ", class: "active", id: "unique")
-           == ~s'<a href="#" class="active" id="unique"> example </a>'
+    result = H.link_to("/index.html", "Home")
+    assert result == ~s'<a href="/index.html">Home</a>'
+
+    result = H.link_to("http://example.com", " example ")
+    assert result == ~s'<a href="http://example.com"> example </a>'
+
+    result = H.link_to("#", " example ", class: "active", id: "unique")
+    assert result == ~s'<a href="#" class="active" id="unique"> example </a>'
   end
 
   test "link helper in template" do
     template = ~s'...<%= link_to "/", "Home" %>...'
-    assert Wyvern.render_view({:inline, template})
-           == ~s'...<a href="/">Home</a>...'
+    result = Wyvern.render_view({:inline, template})
+    assert result == ~s'...<a href="/">Home</a>...'
 
     template = ~s'...<%= link_to "/", "Home", id: "home" %>...'
-    assert Wyvern.render_view({:inline, template})
-           == ~s'...<a href="/" id="home">Home</a>...'
+    result = Wyvern.render_view({:inline, template})
+    assert result == ~s'...<a href="/" id="home">Home</a>...'
   end
 
   test "link in non-html template" do

@@ -31,11 +31,11 @@ defmodule WyvernTest.Fragments do
 
     config = [attrs: [name: "world"]]
 
-    assert Wyvern.render_view(Enum.map([top, sub, subsub], &{:inline, &1}), config)
-           == "hello world and Andrew"
+    result = Wyvern.render_view(Enum.map([top, sub, subsub], &{:inline, &1}), config)
+    assert result == "hello world and Andrew"
 
-    assert Wyvern.render_view(Enum.map([top, sub], &{:inline, &1}), config)
-           == "hello world and "
+    result = Wyvern.render_view(Enum.map([top, sub], &{:inline, &1}), config)
+    assert result == "hello world and "
   end
 
   test "unused layer content" do
@@ -70,8 +70,9 @@ defmodule WyvernTest.Fragments do
       {:inline, "middle level,<% content_for :extra do %>hello middle<% end %>,<%= yield :extra %>"},
       {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
     ]
-    assert Wyvern.render_view(layers)
-           == "top level;hello middlehello bottom;middle level,,hello bottom"
+
+    expected = "top level;hello middlehello bottom;middle level,,hello bottom"
+    assert Wyvern.render_view(layers) == expected
   end
 
   test "immediate fragments" do
@@ -80,7 +81,8 @@ defmodule WyvernTest.Fragments do
       {:inline, "middle level,<%= yield :extra %>,<% content_for :extra do %>hello middle<% end %>"},
       {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
     ]
-    assert Wyvern.render_view(layers)
-           == "top level;hello middlehello bottom;middle level,hello bottom,"
+
+    expected = "top level;hello middlehello bottom;middle level,hello bottom,"
+    assert Wyvern.render_view(layers) == expected
   end
 end
