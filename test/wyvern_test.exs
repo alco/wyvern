@@ -63,6 +63,12 @@ end
 defmodule WyvernTest.Layers do
   use ExUnit.Case
 
+  test "empty layers" do
+    assert_raise ArgumentError, fn ->
+      Wyvern.render_view([])
+    end
+  end
+
   test "simple layering" do
     layers = [
       {:inline, "1 <%= yield %>"},

@@ -28,4 +28,12 @@ defmodule WyvernTest.InvalidTest do
       end
     end
   end
+
+  test "empty layers" do
+    assert_raise ArgumentError, fn ->
+      defmodule SampleView do
+        use Wyvern.View, [layers: []]
+      end
+    end
+  end
 end
