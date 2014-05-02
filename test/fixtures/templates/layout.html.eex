@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><%= model.title %></title>
+    <title><%= @title %></title>
 
     <link href="/css/default.css" rel="stylesheet">
 
-    <%= render model.stylesheets, tag: :stylesheet %>
+    <%= render @stylesheets, tag: :stylesheet %>
 
     <%= yield :head %>
   </head>
@@ -19,6 +19,6 @@
     </div>
 
     <!-- Scripts -->
-    <%= render model.scripts, tag: :script %>
+    <%= render @scripts, tag: :script %>
   </body>
 </html>

@@ -20,7 +20,7 @@ defmodule WyvernTest.Partials do
 
     """
 
-    config = [views_root: views_root, model: [name: "people"]]
+    config = [views_root: views_root, attrs: [name: "people"]]
     assert Wyvern.render_view({:inline, template}, config) == result
   end
 

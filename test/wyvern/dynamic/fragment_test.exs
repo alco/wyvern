@@ -25,11 +25,11 @@ defmodule WyvernTest.Fragments do
   end
 
   test "leftover fragments" do
-    top = "hello <%= model[:name] %> and <%= yield :other_name %>"
+    top = "hello <%= @name %> and <%= yield :other_name %>"
     sub = "ignored content"
     subsub = "<% content_for :other_name do %>Andrew<% end %>"
 
-    config = [model: [name: "world"]]
+    config = [attrs: [name: "world"]]
 
     assert Wyvern.render_view(Enum.map([top, sub, subsub], &{:inline, &1}), config)
            == "hello world and Andrew"
@@ -43,8 +43,7 @@ defmodule WyvernTest.Fragments do
       {:inline, "top level"},
       {:inline, "sub level <% content_for :top do %>...<% end %>"},
     ]
-    assert Wyvern.render_view(layers, model: [name: "people"])
-           == "top level"
+    assert Wyvern.render_view(layers) == "top level"
   end
 
   test "transitive fragments" do

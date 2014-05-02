@@ -11,12 +11,12 @@ defmodule WyvernTest.ViewTest do
   use ExUnit.Case
 
   test "2-level compiled view" do
-    model = %{
+    attrs = %{
       title: "Test Page",
       stylesheets: [src: "/css/style1.css", src: "/css/style2.css"],
       scripts: [inline: ~s'console.log("hi")', src: "/ui.js"],
     }
 
-    assert IndexView.render(model) == File.read!(Path.join(views_root, "layout_rendered.html"))
+    assert IndexView.render(attrs) == File.read!(Path.join(views_root, "layout_rendered.html"))
   end
 end

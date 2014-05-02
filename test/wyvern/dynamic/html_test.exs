@@ -4,7 +4,7 @@ defmodule WyvernTest.HTML do
   import Wyvern.TestHelpers
 
   test "full-blown html" do
-    model = %{
+    attrs = %{
       title: "Test Page",
       stylesheets: [src: "/css/style1.css", src: "/css/style2.css"],
       scripts: [inline: ~s'console.log("hi")', src: "/ui.js"],
@@ -14,7 +14,7 @@ defmodule WyvernTest.HTML do
 
     layers = ["layout", {:inline, sub_template}]
 
-    config = [views_root: views_root, model: model]
+    config = [views_root: views_root, attrs: attrs]
     result = Wyvern.render_view(layers, config)
     expected = File.read!(Path.join(views_root, "layout_rendered.html"))
 
@@ -58,9 +58,9 @@ defmodule WyvernTest.HTMLHelpers do
   test "tags in template" do
     template = """
     Hello.
-    <%= render model[:scripts], tag: :script %>
+    <%= render @scripts, tag: :script %>
     ---
-    <%= render model[:styles], tag: :stylesheet %>
+    <%= render @styles, tag: :stylesheet %>
     End.
     """
 
@@ -76,7 +76,7 @@ defmodule WyvernTest.HTMLHelpers do
     End.
     """
 
-    assert Wyvern.render_view({:inline, template}, model: [scripts: scripts, styles: styles])
+    assert Wyvern.render_view({:inline, template}, attrs: [scripts: scripts, styles: styles])
            == result
   end
 

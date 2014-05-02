@@ -12,10 +12,14 @@ defmodule Wyvern.View do
     layers = opts[:layers]
     quoted = Wyvern.compile_view(layers, opts)
 
-    quote context: nil do
-      def render(model) do
+    q = quote context: nil do
+      def render(attrs) do
         unquote(quoted)
       end
     end
+
+    #q |> IO.inspect |> Macro.to_string |> IO.puts
+
+    q
   end
 end

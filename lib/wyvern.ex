@@ -62,7 +62,7 @@ defmodule Wyvern do
 
 
   defp render_quoted(quoted, config) do
-    {result, _} = Code.eval_quoted(quoted, [model: config[:model]])
+    {result, _} = Code.eval_quoted(quoted, [attrs: config[:attrs]])
     result
   end
 
@@ -114,8 +114,18 @@ defmodule Wyvern do
   end
 
 
+  # FIXME: 2-tuple is also a valid quoted form, so we need to distinguish
+  # <% yield :name %> from [yield: :name]
+
+  defp replace_fragments({:@, _, [{name, _, atom}]}, _fragments, _content)
+                                        when is_atom(name) and is_atom(atom) do
+    quote [context: nil], do: attrs[unquote(name)]
+  end
+
   defp replace_fragments({f, meta, args}, fragments, content) when is_list(args) do
-    {f, meta, Enum.map(args, &replace_fragments(&1, fragments, content))}
+    f = replace_fragments(f, fragments, content)
+    args = Enum.map(args, &replace_fragments(&1, fragments, content))
+    {f, meta, args}
   end
 
   defp replace_fragments({:yield, nil}, _fragments, content) do
