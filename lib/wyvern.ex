@@ -30,6 +30,10 @@ defmodule Wyvern do
 
   defp layers_to_quoted(layers, config) do
     layers = List.wrap(layers)
+    if layers == [] do
+      raise ArgumentError, message: "At least one layer required to build a view or layout"
+    end
+
     config = Keyword.merge(@default_config, config)
 
     pid = self()
@@ -45,10 +49,12 @@ defmodule Wyvern do
       send(pid, :finished)
     end)
 
-    {stages, has_yield} = collect_fragment_messages([], [], false)
+    stages = collect_fragment_messages([], [], false)
+    leaf_has_yield = match?({_, _, true}, hd(stages))
+    stages = Enum.map(stages, fn {s, f, _} -> {s, f} end)
 
     quoted = build_template(stages)
-    {wrap_quoted(quoted, config), not has_yield}
+    {wrap_quoted(quoted, config), not leaf_has_yield}
   end
 
 
@@ -78,17 +84,17 @@ defmodule Wyvern do
         new_fragments = Wyvern.View.Helpers.merge_fragments(fragments, f)
         collect_fragment_messages(new_fragments, stages, has_yield)
 
-      {:stage, s} ->
-        collect_fragment_messages([], [{s, fragments}|stages], has_yield)
-
       :yield ->
         collect_fragment_messages(fragments, stages, true)
+
+      {:stage, s} ->
+        collect_fragment_messages([], [{s, fragments, has_yield}|stages], false)
 
       :finished ->
         if fragments != [] do
           raise RuntimeError, message: "Inconsistent message flow"
         end
-        {stages, has_yield}
+        stages
 
       {:exception, e} -> raise e
     end
