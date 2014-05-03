@@ -58,4 +58,22 @@ defmodule WyvernTest.LayeredLayout do
     assert IndexViewStatic.__info__(:functions) == [render: 1]
     assert IndexViewStatic.render([]) == "-> HEAD...hi. <-"
   end
+
+
+  defmodule CombinedLayout do
+    use Wyvern.Layout, [
+      layers: [
+        {:inline, "-> <%= yield %> <-"},
+        {:inline, "<%= yield :head %>...<%= yield %>."},
+      ]
+    ]
+  end
+
+  test "combined layout" do
+    assert CombinedLayout.render(nil, [], []) == "-> .... <-"
+    assert CombinedLayout.render("content", [], []) == "-> ...content. <-"
+
+    result = CombinedLayout.render("content", [head: "hi"], [])
+    assert result == "-> hi...content. <-"
+  end
 end
