@@ -29,12 +29,16 @@ defmodule WyvernTest.Fragments do
     sub = "ignored content"
     subsub = "<% content_for :other_name do %>Andrew<% end %>"
 
+    assert_raise ArgumentError, fn ->
+      Wyvern.render_view(Enum.map([top, sub, subsub], &{:inline, &1}))
+    end
+
     config = [attrs: [name: "world"]]
 
-    result = Wyvern.render_view(Enum.map([top, sub, subsub], &{:inline, &1}), config)
+    result = Wyvern.render_view(Enum.map([top, subsub], &{:inline, &1}), config)
     assert result == "hello world and Andrew"
 
-    result = Wyvern.render_view(Enum.map([top, sub], &{:inline, &1}), config)
+    result = Wyvern.render_view(Enum.map([top], &{:inline, &1}), config)
     assert result == "hello world and "
   end
 
@@ -43,22 +47,27 @@ defmodule WyvernTest.Fragments do
       {:inline, "top level"},
       {:inline, "sub level <% content_for :top do %>...<% end %>"},
     ]
-    assert Wyvern.render_view(layers) == "top level"
+    assert_raise ArgumentError, fn ->
+      Wyvern.render_view(layers)
+    end
   end
 
   test "transitive fragments" do
+    # FIXME: this doesn't make sense because middle level is ignored
     layers = [
       {:inline, "top level;<%= yield :extra %>"},
-      {:inline, "middle level"},
+      {:inline, "middle,<%= yield %>,level"},
       {:inline, "bottom level <% content_for :extra do %>hello<% end %>"},
     ]
-    assert Wyvern.render_view(layers) == "top level;hello"
+    expected = "top level;hello"
+    assert Wyvern.render_view(layers) == expected
   end
 
   test "concatenating fragments" do
+    # FIXME: middle layer is ignored. It should be forbidden to omit <%= yield %>
     layers = [
       {:inline, "top level;<%= yield :extra %>"},
-      {:inline, "middle level,<% content_for :extra do %>hello middle<% end %>"},
+      {:inline, "middle level,<%= yield %><% content_for :extra do %>hello middle<% end %>"},
       {:inline, "bottom level <% content_for :extra do %>hello bottom<% end %>"},
     ]
     assert Wyvern.render_view(layers) == "top level;hello middlehello bottom"

@@ -94,14 +94,4 @@ defmodule WyvernTest.Layers do
     assert Wyvern.render_view(layers, attrs: [name: "people"])
            == "all the people love some people"
   end
-
-  test "disjointed content" do
-    layers = [
-      {:inline, "top level <%= yield %>"},
-      {:inline, "middle level"},
-      {:inline, "bottom level"},
-    ]
-    assert Wyvern.render_view(layers)
-           == "top level middle level"
-  end
 end

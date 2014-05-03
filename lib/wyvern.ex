@@ -37,24 +37,46 @@ defmodule Wyvern do
     config = Keyword.merge(@default_config, config)
 
     pid = self()
-    spawn(fn ->
-      try do
+    #spawn(fn ->
+      #try do
         Enum.each(layers, fn view ->
           s = preprocess_template(view, {pid, config})
+          # we have to use send() here because preprocess_template also sends
           send(pid, {:stage, s})
         end)
-      rescue
-        e -> send(pid, {:exception, e})
-      end
+      #rescue
+        #e -> send(pid, {:exception, IO.inspect(e)})
+      #end
       send(pid, :finished)
-    end)
+    #end)
 
-    stages = collect_fragment_messages([], [], false)
-    leaf_has_yield = match?({_, _, true}, hd(stages))
-    stages = Enum.map(stages, fn {s, f, _} -> {s, f} end)
+    {stages, leaf_has_yield} =
+      collect_fragment_messages([], [], false)
+      |> validate_stages()
 
-    quoted = build_template(stages)
+    quoted = build_template(stages, leaf_has_yield)
     {wrap_quoted(quoted, config), not leaf_has_yield}
+  end
+
+
+  defp validate_stages([{stage, fragments, has_yield} | rest]) do
+    filtered_stages = [{stage, fragments} | validate_rest_stages(rest)]
+    {filtered_stages , has_yield}
+  end
+
+  defp validate_rest_stages([]), do: []
+
+
+  defp validate_rest_stages([{{:layout, _}=stage, _, _} | rest]) do
+    [stage | validate_rest_stages(rest)]
+  end
+
+  defp validate_rest_stages([{_, _, false}|_]) do
+    raise ArgumentError, message: "Only one leaf layer allowed"
+  end
+
+  defp validate_rest_stages([{stage, fragments, _} | rest]) do
+    [{stage, fragments} | validate_rest_stages(rest)]
   end
 
 
@@ -105,7 +127,14 @@ defmodule Wyvern do
     SEEx.compile_string(view, state, [engine: Wyvern.SuperSmartEngine])
   end
 
-  defp preprocess_template(name, {_pid, config}=state) do
+  defp preprocess_template(modname, _) when is_atom(modname) do
+    if Keyword.get_values(modname.__info__(:functions), :render) != [3] do
+      raise ArgumentError, message: "Expected a layout module in layers"
+    end
+    {:layout, modname}
+  end
+
+  defp preprocess_template(name, {_pid, config}=state) when is_binary(name) do
     {filename, config} = make_filename(name, config)
     base_path = if String.contains?(name, "/") do
       get_views_root(config)
@@ -117,44 +146,108 @@ defmodule Wyvern do
   end
 
 
-  defp build_template(stages) do
-    build_template(stages, [], nil)
+  defp build_template(stages, true) do
+    # Leaf layer has a yield placeholder. This means that it'll be compiled
+    # into a layout and it should accept its content and any additional
+    # fragments as function arguments at run time
+    build_template_dynamic(stages)
   end
 
-  defp build_template([], _fragments, content) do
+  defp build_template(stages, false) do
+    # Leaf layer will be used as a view, so we can compile all the content and
+    # fragments right into the resulting AST.
+    build_template_static(stages)
+  end
+
+
+  defp build_template_dynamic([{quoted, fragments}|rest]) do
+    # First stage is special because we know it will take its content and fragments
+    # as function arguments
+    content = replace_fragments_dynamic(quoted)
+    build_template_dynamic(rest, fragments, content)
+  end
+
+  defp build_template_dynamic([], _fragments, content) do
     content
   end
 
-  defp build_template([{quoted, stage_frags}|rest], fragments, content) do
-    quoted = replace_fragments(quoted, fragments, content)
+  defp build_template_dynamic([{quoted, stage_frags}|rest], fragments, content) do
+    quoted = replace_fragments_static(quoted, fragments, content)
     new_fragments = Wyvern.View.Helpers.merge_fragments(stage_frags, fragments)
-    build_template(rest, new_fragments, quoted)
+    build_template_dynamic(rest, new_fragments, quoted)
   end
 
 
-  # FIXME: 2-tuple is also a valid quoted form, so we need to distinguish
-  # <% yield :name %> from [yield: :name]
-
-  defp replace_fragments({:@, _, [{name, _, atom}]}, _fragments, _content)
+  defp replace_fragments_dynamic({:@, _, [{name, _, atom}]})
                                         when is_atom(name) and is_atom(atom) do
     quote [context: nil], do: attrs[unquote(name)]
   end
 
-  defp replace_fragments({f, meta, args}, fragments, content) when is_list(args) do
-    f = replace_fragments(f, fragments, content)
-    args = Enum.map(args, &replace_fragments(&1, fragments, content))
+  defp replace_fragments_dynamic({f, meta, args}) when is_list(args) do
+    f = replace_fragments_dynamic(f)
+    args = Enum.map(args, &replace_fragments_dynamic/1)
     {f, meta, args}
   end
 
-  defp replace_fragments({:yield, nil}, _fragments, content) do
+  # FIXME: 2-tuple is also a valid quoted form, so we need to distinguish
+  # <% yield :name %> from [yield: :name]
+
+  defp replace_fragments_dynamic({:yield, nil}) do
+    quote [context: nil], do: content
+  end
+
+  defp replace_fragments_dynamic({:yield, section}) do
+    quote [context: nil], do: fragments[unquote(section)]
+  end
+
+  defp replace_fragments_dynamic(other), do: other
+
+
+  defp build_template_static(stages) do
+    build_template_static(stages, [], nil)
+  end
+
+  defp build_template_static([], _fragments, content) do
     content
   end
 
-  defp replace_fragments({:yield, section}, fragments, _content) do
+  defp build_template_static([{:layout, modname}|rest], fragments, content) do
+    quoted = quote context: nil do
+      unquote(modname).render(unquote(content), unquote(fragments), attrs)
+    end
+    build_template_static(rest, fragments, quoted)
+  end
+
+  defp build_template_static([{quoted, stage_frags}|rest], fragments, content) do
+    quoted = replace_fragments_static(quoted, fragments, content)
+    new_fragments = Wyvern.View.Helpers.merge_fragments(stage_frags, fragments)
+    build_template_static(rest, new_fragments, quoted)
+  end
+
+
+  defp replace_fragments_static({:@, _, [{name, _, atom}]}, _fragments, _content)
+                                        when is_atom(name) and is_atom(atom) do
+    quote [context: nil], do: attrs[unquote(name)]
+  end
+
+  defp replace_fragments_static({f, meta, args}, fragments, content) when is_list(args) do
+    f = replace_fragments_static(f, fragments, content)
+    args = Enum.map(args, &replace_fragments_static(&1, fragments, content))
+    {f, meta, args}
+  end
+
+  # FIXME: 2-tuple is also a valid quoted form, so we need to distinguish
+  # <% yield :name %> from [yield: :name]
+
+  defp replace_fragments_static({:yield, nil}, _fragments, content) do
+    content
+  end
+
+  defp replace_fragments_static({:yield, section}, fragments, _content) do
     fragments[section]
   end
 
-  defp replace_fragments(other, _, _) do
+  defp replace_fragments_static(other, _, _) do
     other
   end
 
