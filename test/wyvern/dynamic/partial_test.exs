@@ -3,12 +3,19 @@ defmodule WyvernTest.Partials do
 
   import Wyvern.TestHelpers
 
+  test "bad partial in template" do
+    template = ~s'<%= include "about" %>'
+    assert_raise ArgumentError, fn ->
+      Wyvern.render_view({:inline, template})
+    end
+  end
+
   test "partial in template" do
     template = """
     Hello.
-    <%= include "about" %>
+    <%= include "/about" %>
     ---
-    <%= include "hello" %>
+    <%= include "/hello" %>
     """
 
     result = """
@@ -26,7 +33,7 @@ defmodule WyvernTest.Partials do
 
   test "partials and layers" do
     layers = [
-      {:inline, ~s'Hello, <%= include "content_yield" %>'},
+      {:inline, ~s'Hello, <%= include "/content_yield" %>'},
       {:inline, "<% content_for :content do %><sample content><% end %>"},
     ]
     result = "Hello, This content is from :content:\n<sample content>\n"
@@ -36,8 +43,8 @@ defmodule WyvernTest.Partials do
 
   test "partial content_for" do
     layers = [
-      {:inline, ~s'Hello, <%= include "content_yield" %>'},
-      {:inline, ~s'<%= include "content_for" %>'},
+      {:inline, ~s'Hello, <%= include "/content_yield" %>'},
+      {:inline, ~s'<%= include "/content_for" %>'},
     ]
     result = "Hello, This content is from :content:\ncustom content\n"
 

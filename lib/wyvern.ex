@@ -123,8 +123,9 @@ defmodule Wyvern do
   end
 
 
-  defp preprocess_template({:inline, view}, state) do
-    SEEx.compile_string(view, state, [engine: Wyvern.SuperSmartEngine])
+  defp preprocess_template({:inline, view}, {pid, config}) do
+    config = Keyword.put(config, :current_template_dir, nil)
+    SEEx.compile_string(view, {pid, config}, [engine: Wyvern.SuperSmartEngine])
   end
 
   defp preprocess_template(modname, _) when is_atom(modname) do
@@ -134,17 +135,12 @@ defmodule Wyvern do
     {:layout, modname}
   end
 
-  defp preprocess_template(name, {_pid, config}=state) when is_binary(name) do
+  defp preprocess_template(name, {pid, config}) when is_binary(name) do
     {filename, config} = make_filename(name, config)
-    # FIXME: get rid of this. Only the leaf layer is searched in templates/
-    # everything else before it is a layout
-    base_path = if String.contains?(name, "/") do
-      get_views_root(config)
-    else
-      get_templates_root(config)
-    end
+    base_path = get_templates_dir(config)
     path = Path.join(base_path, filename)
-    SEEx.compile_file(path, state, [engine: Wyvern.SuperSmartEngine])
+    config = Keyword.put(config, :current_template_dir, Path.dirname(path))
+    SEEx.compile_file(path, {pid, config}, [engine: Wyvern.SuperSmartEngine])
   end
 
 
@@ -264,7 +260,15 @@ defmodule Wyvern do
   def render_partial(name, {_pid, config}=state) do
     config = Keyword.merge(@default_config, config || [])
     {filename, _config} = make_filename(name, config, partial: true)
-    path = Path.join(get_partials_root(config), filename)
+    base_path = if String.contains?(name, "/") do
+      get_partials_dir(config)
+    else
+      config[:current_template_dir]
+    end
+    if base_path == nil do
+      raise ArgumentError, message: "Can only use shared partials in dynamic views"
+    end
+    path = Path.join(base_path, filename)
 
     SEEx.compile_file(path, state, [engine: Wyvern.SuperSmartEngine])
   end
@@ -278,7 +282,9 @@ defmodule Wyvern do
       name <> make_ext(config)
     end
 
-    if opts[:partial], do: filename = "_" <> filename
+    if opts[:partial] do
+      filename = Path.join(Path.dirname(filename), "_" <> Path.basename(filename))
+    end
 
     {filename, config}
   end
@@ -302,16 +308,16 @@ defmodule Wyvern do
   defp get_views_root(config), do:
     config[:views_root] || "lib/#{Mix.Project.config[:app]}/views"
 
-  defp get_templates_root(config) do
-    if path = config[:templates_root] do
+  defp get_templates_dir(config) do
+    if path = config[:templates_dir] do
       path
     else
       Path.join(get_views_root(config), "templates")
     end
   end
 
-  defp get_partials_root(config) do
-    if path = config[:partials_root] do
+  defp get_partials_dir(config) do
+    if path = config[:partials_dir] do
       path
     else
       Path.join(get_views_root(config), "partials")
