@@ -136,6 +136,8 @@ defmodule Wyvern do
 
   defp preprocess_template(name, {_pid, config}=state) when is_binary(name) do
     {filename, config} = make_filename(name, config)
+    # FIXME: get rid of this. Only the leaf layer is searched in templates/
+    # everything else before it is a layout
     base_path = if String.contains?(name, "/") do
       get_views_root(config)
     else

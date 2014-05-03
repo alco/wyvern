@@ -48,18 +48,18 @@ Wyvern.render_view({:inline, "plain text content"}) |> IO.puts
 plain text content
 ```
 
-Data is passed into templates via the `model` parameter.
+Data is passed into templates via attributes.
 
 ```elixir
-Wyvern.render_view({:inline, "hello <%= model[:name] %>"}, model: [name: "world"])
+Wyvern.render_view({:inline, "hello <%= @name %>"}, attrs: [name: "world"])
 |> IO.puts
 ---
 hello world
 ```
 
-The first argument to `render_view` can be a text template (passed in as a tuple
-`{:inline, <text>}`), a string (interpreted as a file name), or a list of those
-things.
+The first argument to `render_view` can be a text template (passed in as a
+tuple `{:inline, <text>}`), a string (interpreted as a file name), a module
+alias (described in more detail below) or a list of those things.
 
 When passing a list, Wyvern renders it as a list of layers, starting from the
 first one and including into it the specified content from subsequent layers:
@@ -86,25 +86,17 @@ some more content
 hello from index
 ```
 
-When passed in, the model will be shared accross all layers:
+Attributes are passed through all the layers:
 
 ```elixir
-top = "hello <%= model[:name] %> and <%= yield :other_name %>"
-sub = "ignored content"
-subsub = "<% content_for :other_name do %>Andrew<% end %>"
+top = "hello <%= @name %> and <%= yield :other_name %>"
+sub = "<% content_for :other_name do %>Andrew<% end %>"
 
-config = [model: [name: "world"]]
+config = [attrs: [name: "world"]]
 Wyvern.render_view(Enum.map([top, sub], &{:inline, &1}), config) |> IO.puts
 ---
 hello world and Andrew
 ```
-
-Notice that the content from `sub` does not show up in the rendered text because
-`top` does not have a `yield` placeholder.
-
-Wyvern starts rendering from the first layer and treats each layer as a
-blueprint for the expected result. Since `top` does not include any content
-using `yield`, subsequent layer does not get "pasted" into it.
 
 
 ### Templates in files
@@ -136,13 +128,13 @@ Wyvern.render_view(["layouts/base", "index"])
 First, Wyvern looks for the "layouts/base" file. Because its name contains a
 slash, its path is derived directly from the `$views_root` location. The
 `.html.eex` suffix is added based on the current format and template rendering
-engine settings (HTML and EEx, respectively, by default).
+engine settings (by default HTML and EEx, respectively).
 
 Thus, it finds and renders the file in `$views_root/layouts/base.html.eex`.
 
-Next, it looks for the "index" file. There are no slahes in the name, so it'll
-look in the `$views_root/$templates_dir/`. `templates_dir` is another config
-variable, set to "templates" by default. In the end it will find the template
+Next, it looks for the "index" file. There are no slahes in the name, so it will
+search in the `$views_root/$templates_dir/`. `templates_dir` is another config
+variable, set to `templates` by default. In the end it will find the template
 at this path: `$views_root/templates/index.html.eex`.
 
 If `index.html.eex` has a call to the `include` helper (e.g. `<%= include
@@ -168,14 +160,14 @@ supplied model and producing the final rendered content.
 Wyvern has direct support for precompiled views backed by Elixir modules. It is
 important to get the terminology right here:
 
-* **templates** are just files written in a templating language (EEx or HAML,
-  for instance)
+* **templates** are files written in a templating language (EEx or HAML, for
+  instance)
 
 * **views** are Elixir modules that `use Wyvern.View`, they represent logical
   pieces of your application
 
 When you have an Elixir module that serves as a Wyvern view, it will precompile
-the content from its corresponding template at your project's compile time and
+the content from its corresponding template during your project's compilation and
 it will be much more efficient to render the view at run time.
 
 Plus you'll get other benefits like having one place to keep options specific
