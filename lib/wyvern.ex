@@ -171,6 +171,13 @@ defmodule Wyvern do
     content
   end
 
+  defp build_template_dynamic([{:layout, modname}|rest], fragments, content) do
+    quoted = quote context: nil do
+      unquote(modname).render(unquote(content), unquote(fragments), attrs)
+    end
+    build_template_dynamic(rest, fragments, quoted)
+  end
+
   defp build_template_dynamic([{quoted, stage_frags}|rest], fragments, content) do
     quoted = replace_fragments_static(quoted, fragments, content)
     new_fragments = Wyvern.View.Helpers.merge_fragments(stage_frags, fragments)

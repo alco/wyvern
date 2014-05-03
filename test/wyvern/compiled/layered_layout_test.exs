@@ -76,4 +76,35 @@ defmodule WyvernTest.LayeredLayout do
     result = CombinedLayout.render("content", [head: "hi"], [])
     assert result == "-> hi...content. <-"
   end
+
+
+  defmodule MixedLayout do
+    use Wyvern.Layout, [
+      layers: [
+        BaseLayout,
+        {:inline, "<%= yield :head %>...<%= yield %>."},
+      ]
+    ]
+  end
+
+  test "mixed layout" do
+    assert MixedLayout.render(nil, [], []) == "-> .... <-"
+    assert MixedLayout.render("content", [], []) == "-> ...content. <-"
+    assert MixedLayout.render("content", [head: "HEAD"], []) == "-> HEAD...content. <-"
+  end
+
+
+  defmodule MixedView do
+    use Wyvern.View, [
+      layers: [
+        MixedLayout,
+        {:inline, "some<%= yield %>more<%= yield :more%>content"},
+        {:inline, "###<% content_for :head do %>HHH<% end %> <% content_for :more do %>!!!<% end %>@@@"},
+      ]
+    ]
+  end
+
+  test "mixed static dynamic layout" do
+    assert MixedView.render([]) == "-> HHH...some### @@@more!!!content. <-"
+  end
 end
