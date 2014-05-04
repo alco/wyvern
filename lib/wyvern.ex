@@ -18,8 +18,59 @@ defmodule Wyvern do
 
 
   def render_view(layers, config \\ []) do
-    layers_to_quoted(layers, config)
-    |> render_quoted(config)
+    result =
+      layers_to_quoted(layers, config)
+      |> render_quoted(config)
+
+    if file_opts = config[:file_opts] do
+      config = Keyword.merge(@default_config, config)
+      output_dir = file_opts[:output_dir]
+      name = List.last(layers)
+      filename = Path.basename(name) <> "." <> file_opts[:ext]
+      outpath = Path.join(output_dir, filename)
+      write_to_file_if_needed(result, name, outpath, config)
+    else
+      result
+    end
+  end
+
+
+  defp write_to_file_if_needed(data, name, path, config) do
+    opts = config[:file_opts]
+    write? = cond do
+      opts[:check] == :timestamp ->
+        case File.stat(path) do
+          {:ok, stat} ->
+            {template_path, _} = template_path_from_name(name, config)
+            template_stat = File.stat!(template_path)
+            time_is_newer(stat.mtime, template_stat.mtime)
+          {:error, :enoent} -> true
+        end
+
+      opts[:check] == :checksum ->
+        #template_path = template_path_from_name(name, config)
+        #checksum_changed?(...)
+        true
+
+      true -> true
+    end
+
+    if write? do
+        File.write!(path, data)
+    end
+  end
+
+
+  defp time_is_newer(t1, t2) do
+    seconds1 = :calendar.datetime_to_gregorian_seconds(t1)
+    seconds2 = :calendar.datetime_to_gregorian_seconds(t2)
+    seconds1 - seconds2 > 0
+  end
+
+  def render_views(views, config) do
+    Enum.each(views, fn layers ->
+      render_view(layers, config)
+    end)
   end
 
 
@@ -136,13 +187,17 @@ defmodule Wyvern do
   end
 
   defp preprocess_template(name, {pid, config}) when is_binary(name) do
-    {filename, config} = make_filename(name, config)
-    base_path = get_templates_dir(config)
-    path = Path.join(base_path, filename)
+    {path, config} = template_path_from_name(name, config)
     config = Keyword.put(config, :current_template_dir, Path.dirname(path))
     SEEx.compile_file(path, {pid, config}, [engine: Wyvern.SuperSmartEngine])
   end
 
+
+  defp template_path_from_name(name, config) do
+    {filename, config} = make_filename(name, config)
+    base_path = get_templates_dir(config)
+    {Path.join(base_path, filename), config}
+  end
 
   defp build_template(stages, true) do
     # Leaf layer has a yield placeholder. This means that it'll be compiled
