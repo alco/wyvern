@@ -24,8 +24,12 @@ defmodule Wyvern do
 
 
   def render_view(layers, config \\ []) do
-    result =
+    result = if config[:autocompile] do
       layers_to_quoted(layers, config, true)
+    else
+      layers_to_quoted(layers, config, false)
+      |> render_quoted(config)
+    end
 
     if file_opts = config[:file_opts] do
       config = Keyword.merge(@default_config, config)
@@ -210,15 +214,15 @@ defmodule Wyvern do
   end
 
 
-  #defp render_quoted({quoted, is_leaf}, config) do
-    #bindings = if is_leaf do
-      #[attrs: config[:attrs]]
-    #else
-      #[content: nil, fragments: [], attrs: config[:attrs]]
-    #end
-    #{result, _} = Code.eval_quoted(quoted, bindings)
-    #result
-  #end
+  defp render_quoted({quoted, is_leaf}, config) do
+    bindings = if is_leaf do
+      [attrs: config[:attrs]]
+    else
+      [content: nil, fragments: [], attrs: config[:attrs]]
+    end
+    {result, _} = Code.eval_quoted(quoted, bindings)
+    result
+  end
 
 
   defp collect_fragment_messages(fragments, stages, has_yield) do
@@ -271,7 +275,7 @@ defmodule Wyvern do
 
   defp build_compiled_template({stage, view, fragments}, config) do
     if cached = Wyvern.Cache.get(view) do
-      IO.puts "Got from cache: #{inspect cached}"
+      #IO.puts "Got from cache: #{inspect cached}"
       cached
     else
       # Leaf layer has a yield placeholder. This means that it'll be compiled
