@@ -49,7 +49,7 @@ defmodule Wyvern do
           {:ok, stat} ->
             {template_path, _} = template_path_from_name(name, config)
             template_stat = File.stat!(template_path)
-            time_is_newer(stat.mtime, template_stat.mtime)
+            not time_is_newer(stat.mtime, template_stat.mtime)
           {:error, :enoent} -> true
         end
 
@@ -77,7 +77,7 @@ defmodule Wyvern do
   defp time_is_newer(t1, t2) do
     seconds1 = :calendar.datetime_to_gregorian_seconds(t1)
     seconds2 = :calendar.datetime_to_gregorian_seconds(t2)
-    seconds1 - seconds2 > 0
+    seconds1 > seconds2
   end
 
   def render_views(views, config) do
