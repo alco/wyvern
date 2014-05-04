@@ -11,7 +11,7 @@ defmodule WyvernTest.Fragments do
     <% content_for :middle do %>This is middle content.<% end %>
     """
 
-    result = """
+    expected = """
     Hello world. This is middle content. Interlude. Main content goes here.
 
      Footer.
@@ -21,7 +21,7 @@ defmodule WyvernTest.Fragments do
       {:inline, base},
       {:inline, section},
     ]
-    assert Wyvern.render_view(layers) == result
+    assert Wyvern.render_view(layers) == expected
   end
 
   test "leftover fragments" do

@@ -99,10 +99,10 @@ defmodule WyvernTest.HTMLHelpers do
     assert result == ~s'...<a href="/" id="home">Home</a>...'
   end
 
-  test "link in non-html template" do
-    template = ~s'...<%= link_to "/", "Home" %>...'
-    assert_raise CompileError, fn ->
-      Wyvern.render_view({:inline, template}, ext: "txt")
-    end
-  end
+  #test "link in non-html template" do
+    #template = ~s'...<%= link_to "/", "Home" %>...'
+    #assert_raise CompileError, fn ->
+      #Wyvern.render_view({:inline, template}, ext: "txt")
+    #end
+  #end
 end

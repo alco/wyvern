@@ -25,8 +25,7 @@ defmodule Wyvern do
 
   def render_view(layers, config \\ []) do
     result =
-      layers_to_quoted(layers, config)
-      |> render_quoted(config)
+      layers_to_quoted(layers, config, true)
 
     if file_opts = config[:file_opts] do
       config = Keyword.merge(@default_config, config)
@@ -108,11 +107,11 @@ defmodule Wyvern do
 
 
   def compile_layers(layers, config \\ []) do
-    layers_to_quoted(layers, config)
+    layers_to_quoted(layers, config, false)
   end
 
 
-  defp layers_to_quoted(layers, config) do
+  defp layers_to_quoted(layers, config, render?) do
     layers = List.wrap(layers)
     if layers == [] do
       raise ArgumentError, message: "At least one layer required to build a view or layout"
@@ -126,7 +125,7 @@ defmodule Wyvern do
         Enum.each(layers, fn view ->
           s = preprocess_template(view, {pid, config})
           # we have to use send() here because preprocess_template also sends
-          send(pid, {:stage, s})
+          send(pid, {:stage, s, view})
         end)
       #rescue
         #e -> send(pid, {:exception, IO.inspect(e)})
@@ -138,29 +137,67 @@ defmodule Wyvern do
       collect_fragment_messages([], [], false)
       |> validate_stages()
 
-    quoted = build_template(stages, leaf_has_yield)
-    {wrap_quoted(quoted, config), not leaf_has_yield}
+    # stages are reversed from the original order of layers at this point
+    if render? do
+      modules =
+        [build_compiled_template(hd(stages), config)
+         | Enum.map(tl(stages), &build_compiled_template(&1, config))]
+
+      render_modules(modules, config)
+    else
+      # Old way of template compilation to keep the tests passing for now
+      quoted =
+        stages
+        |> Enum.map(fn
+          {stage, _view, fragments} -> {stage, fragments}
+          {:layout, _}=stage -> stage
+        end)
+        |> build_template(leaf_has_yield)
+        |> wrap_quoted(config)
+      {quoted, not leaf_has_yield}
+    end
   end
 
 
-  defp validate_stages([{stage, fragments, has_yield} | rest]) do
-    filtered_stages = [{stage, fragments} | validate_rest_stages(rest)]
-    {filtered_stages , has_yield}
+  defp validate_stages([{stage, view, fragments, has_yield} | rest]) do
+    filtered_stages = [{stage, view, fragments} | validate_rest_stages(rest)]
+    {filtered_stages, has_yield}
   end
 
   defp validate_rest_stages([]), do: []
 
-
-  defp validate_rest_stages([{{:layout, _}=stage, _, _} | rest]) do
+  defp validate_rest_stages([{{:layout, _}=stage, _, _, _} | rest]) do
     [stage | validate_rest_stages(rest)]
   end
 
-  defp validate_rest_stages([{_, _, false}|_]) do
+  defp validate_rest_stages([{_, _, _, false}|_]) do
     raise ArgumentError, message: "Only one leaf layer allowed"
   end
 
-  defp validate_rest_stages([{stage, fragments, _} | rest]) do
-    [{stage, fragments} | validate_rest_stages(rest)]
+  defp validate_rest_stages([{stage, view, fragments, _} | rest]) do
+    [{stage, view, fragments} | validate_rest_stages(rest)]
+  end
+
+
+  defp render_modules(modules, config) do
+    render_modules_with_content(modules, nil, [], config[:attrs])
+  end
+
+  defp render_modules_with_content([], content, _, _) do
+    content
+  end
+
+  defp render_modules_with_content([m|rest], content, fragments, attrs) do
+    {new_content, m_fragments} = m.render(content, fragments, attrs)
+    new_fragments = merge_compiled_fragments(fragments, m_fragments)
+    render_modules_with_content(rest, new_content, new_fragments, attrs)
+  end
+
+
+  defp merge_compiled_fragments(fragments, new_fragments) do
+    Keyword.merge(new_fragments, fragments, fn(_, f1, f2) ->
+      f1 <> f2
+    end)
   end
 
 
@@ -173,15 +210,15 @@ defmodule Wyvern do
   end
 
 
-  defp render_quoted({quoted, is_leaf}, config) do
-    bindings = if is_leaf do
-      [attrs: config[:attrs]]
-    else
-      [content: nil, fragments: [], attrs: config[:attrs]]
-    end
-    {result, _} = Code.eval_quoted(quoted, bindings)
-    result
-  end
+  #defp render_quoted({quoted, is_leaf}, config) do
+    #bindings = if is_leaf do
+      #[attrs: config[:attrs]]
+    #else
+      #[content: nil, fragments: [], attrs: config[:attrs]]
+    #end
+    #{result, _} = Code.eval_quoted(quoted, bindings)
+    #result
+  #end
 
 
   defp collect_fragment_messages(fragments, stages, has_yield) do
@@ -193,8 +230,8 @@ defmodule Wyvern do
       :yield ->
         collect_fragment_messages(fragments, stages, true)
 
-      {:stage, s} ->
-        collect_fragment_messages([], [{s, fragments, has_yield}|stages], false)
+      {:stage, s, v} ->
+        collect_fragment_messages([], [{s, v, fragments, has_yield}|stages], false)
 
       :finished ->
         if fragments != [] do
@@ -230,6 +267,33 @@ defmodule Wyvern do
     {filename, config} = make_filename(name, config)
     base_path = get_templates_dir(config)
     {Path.join(base_path, filename), config}
+  end
+
+  defp build_compiled_template({stage, view, fragments}, config) do
+    if cached = Wyvern.Cache.get(view) do
+      IO.puts "Got from cache: #{inspect cached}"
+      cached
+    else
+      # Leaf layer has a yield placeholder. This means that it'll be compiled
+      # into a layout and it should accept its content and any additional
+      # fragments as function arguments at run time
+      quoted = build_template_dynamic([{stage, fragments}]) |> wrap_quoted(config)
+
+      module_body = quote context: nil do
+        def render(content, fragments, attrs) do
+          {unquote(quoted), unquote(fragments)}
+        end
+      end
+      {:module, name, _beam, _} = Module.create(gen_mod_name(), module_body)
+      Wyvern.Cache.put(view, name)
+      name
+    end
+  end
+
+  defp gen_mod_name() do
+    {mega, sec, micro} = :os.timestamp()
+    t = "#{mega}#{sec}#{micro}"
+    Module.concat(Wyvern.GeneratedView, t)
   end
 
   defp build_template(stages, true) do
