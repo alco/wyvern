@@ -6,4 +6,8 @@ defmodule Wyvern.Mixfile do
      version: "0.0.1",
      elixir: "~> 0.13.0"]
   end
+
+  def application do
+    [mod: {Wyvern, []}]
+  end
 end

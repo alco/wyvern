@@ -1,4 +1,10 @@
 defmodule Wyvern do
+  use Application.Behaviour
+
+  def start(_, _) do
+    Wyvern.Supervisor.start_link
+  end
+
   @default_config [
     ext: "html",
     engine: :eex,
@@ -48,15 +54,22 @@ defmodule Wyvern do
         end
 
       opts[:check] == :checksum ->
-        #template_path = template_path_from_name(name, config)
-        #checksum_changed?(...)
-        true
+        template_path = template_path_from_name(name, config)
+        new_checksum = :erlang.crc32(data)
+        old_checksum = Wyvern.Cache.get({:checksum, template_path})
+        Wyvern.Cache.put({:checksum, template_path}, new_checksum)
+        if old_checksum do
+          old_checksum != new_checksum
+        else
+          true
+        end
 
       true -> true
     end
 
     if write? do
-        File.write!(path, data)
+      IO.puts "[wyvern] Writing template #{name}"
+      File.write!(path, data)
     end
   end
 
@@ -68,9 +81,29 @@ defmodule Wyvern do
   end
 
   def render_views(views, config) do
+    file_opts = config[:file_opts]
+    cache_path = Path.join(file_opts[:output_dir], ".view_checksums")
+
+    # prepare cache
+    if file_opts[:check] == :checksum do
+      case File.read(cache_path) do
+        {:ok, data} ->
+          map = :erlang.binary_to_term(data)
+          Wyvern.Cache.reset(map)
+
+        _ -> nil
+      end
+    end
+
     Enum.each(views, fn layers ->
       render_view(layers, config)
     end)
+
+    # save cache
+    if file_opts[:check] == :checksum do
+      map = Wyvern.Cache.get_state()
+      File.write!(cache_path, :erlang.term_to_binary(map))
+    end
   end
 
 
