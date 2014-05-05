@@ -345,9 +345,13 @@ defmodule Wyvern do
   end
 
   defp replace_fragments_dynamic({f, meta, args}) when is_list(args) do
-    f = replace_fragments_dynamic(f)
-    args = Enum.map(args, &replace_fragments_dynamic/1)
-    {f, meta, args}
+    {replace_fragments_dynamic(f),
+     meta,
+     replace_fragments_dynamic(args)}
+  end
+
+  defp replace_fragments_dynamic(list) when is_list(list) do
+    Enum.map(list, &replace_fragments_dynamic/1)
   end
 
   # FIXME: 2-tuple is also a valid quoted form, so we need to distinguish
@@ -359,6 +363,10 @@ defmodule Wyvern do
 
   defp replace_fragments_dynamic({:yield, section}) do
     quote [context: nil], do: fragments[unquote(section)]
+  end
+
+  defp replace_fragments_dynamic({a, b}) do
+    {replace_fragments_dynamic(a), replace_fragments_dynamic(b)}
   end
 
   defp replace_fragments_dynamic(other), do: other
@@ -392,9 +400,13 @@ defmodule Wyvern do
   end
 
   defp replace_fragments_static({f, meta, args}, fragments, content) when is_list(args) do
-    f = replace_fragments_static(f, fragments, content)
-    args = Enum.map(args, &replace_fragments_static(&1, fragments, content))
-    {f, meta, args}
+    {replace_fragments_static(f, fragments, content),
+     meta,
+     replace_fragments_static(args, fragments, content)}
+  end
+
+  defp replace_fragments_static(list, fragments, content) when is_list(list) do
+    Enum.map(list, &replace_fragments_static(&1, fragments, content))
   end
 
   # FIXME: 2-tuple is also a valid quoted form, so we need to distinguish
@@ -406,6 +418,11 @@ defmodule Wyvern do
 
   defp replace_fragments_static({:yield, section}, fragments, _content) do
     fragments[section]
+  end
+
+  defp replace_fragments_static({a, b}, fragments, content) do
+    {replace_fragments_static(a, fragments, content),
+     replace_fragments_static(b, fragments, content)}
   end
 
   defp replace_fragments_static(other, _, _) do

@@ -8,6 +8,8 @@ defmodule WyvernTest.HTML do
       title: "Test Page",
       stylesheets: [src: "/css/style1.css", src: "/css/style2.css"],
       scripts: [inline: ~s'console.log("hi")', src: "/ui.js"],
+      cond: true,
+      then: "then",
     }
 
     layers = ["layout", "index"]
