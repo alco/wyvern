@@ -99,4 +99,12 @@ defmodule WyvernTest.Fragments do
     assert Wyvern.render_view({:inline, "<%= yield %>"}) == ""
     assert Wyvern.render_view({:inline, "<%= yield :head %>"}) == ""
   end
+
+  test "attributes in fragments" do
+    layers = [
+      {:inline, "<%= yield %><%= yield :head %>"},
+      {:inline, "<% content_for :head do %><%= @hello %><% end %>"},
+    ]
+    assert Wyvern.render_view(layers, attrs: [hello: "hi"]) == "hi"
+  end
 end

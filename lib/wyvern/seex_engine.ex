@@ -54,5 +54,28 @@ defmodule Wyvern.SuperSmartEngine do
     Wyvern.render_partial(partial, state)
   end
 
-  defp transform(other, _), do: other
+  defp transform(other, _) do
+    replace_attr_refs(other)
+  end
+
+  defp replace_attr_refs({:@, _, [{name, _, atom}]})
+                                        when is_atom(name) and is_atom(atom) do
+    quote [context: nil], do: attrs[unquote(name)]
+  end
+
+  defp replace_attr_refs({f, meta, args}) when is_list(args) do
+    {replace_attr_refs(f), meta, replace_attr_refs(args)}
+  end
+
+  defp replace_attr_refs({a, b}) do
+    {replace_attr_refs(a), replace_attr_refs(b)}
+  end
+
+  defp replace_attr_refs(list) when is_list(list) do
+    Enum.map(list, &replace_attr_refs/1)
+  end
+
+  defp replace_attr_refs(other) do
+    other
+  end
 end

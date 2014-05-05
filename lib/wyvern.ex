@@ -339,11 +339,6 @@ defmodule Wyvern do
   end
 
 
-  defp replace_fragments_dynamic({:@, _, [{name, _, atom}]})
-                                        when is_atom(name) and is_atom(atom) do
-    quote [context: nil], do: attrs[unquote(name)]
-  end
-
   defp replace_fragments_dynamic({f, meta, args}) when is_list(args) do
     {replace_fragments_dynamic(f),
      meta,
@@ -393,11 +388,6 @@ defmodule Wyvern do
     build_template_static(rest, new_fragments, quoted)
   end
 
-
-  defp replace_fragments_static({:@, _, [{name, _, atom}]}, _fragments, _content)
-                                        when is_atom(name) and is_atom(atom) do
-    quote [context: nil], do: attrs[unquote(name)]
-  end
 
   defp replace_fragments_static({f, meta, args}, fragments, content) when is_list(args) do
     {replace_fragments_static(f, fragments, content),
