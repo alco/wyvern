@@ -110,6 +110,7 @@ defmodule WyvernTest.FragmentTest do
       {:inline, "Hello world"},
       {:inline, "<% content_for :head do %>content<% end %>"},
     ]
+    # FIXME: be more specific about the exception
     assert_raise ArgumentError, fn ->
       Wyvern.render_view(layers)
     end

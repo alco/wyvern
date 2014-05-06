@@ -1,5 +1,5 @@
 ExUnit.start
 
-defmodule Wyvern.TestHelpers do
+defmodule WyvernTest.TestHelpers do
   def views_root, do: Path.join([System.cwd(), "test", "fixtures"])
 end

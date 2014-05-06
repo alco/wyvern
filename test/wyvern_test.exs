@@ -1,7 +1,5 @@
-defmodule WyvernTest.Templates do
+defmodule WyvernTest.TemplatesTest do
   use ExUnit.Case
-
-  import Wyvern.TestHelpers
 
   test "basic string templates" do
     template = "Hello world!"
@@ -22,7 +20,7 @@ defmodule WyvernTest.Templates do
   end
 
   test "basic file template" do
-    config = [views_root: views_root, attrs: [name: "people"]]
+    config = [views_root: WyvernTest.TestHelpers.views_root, attrs: [name: "people"]]
     assert Wyvern.render_view("basic", config) == "Hello people!\n"
   end
 
@@ -60,10 +58,11 @@ defmodule WyvernTest.Templates do
   end
 end
 
-defmodule WyvernTest.Layers do
+defmodule WyvernTest.LayersTest do
   use ExUnit.Case
 
   test "empty layers" do
+    # FIXME: be more specific about the exception
     assert_raise ArgumentError, fn ->
       Wyvern.render_view([])
     end

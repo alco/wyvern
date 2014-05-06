@@ -1,5 +1,5 @@
 defmodule WyvernTest.ViewTest do
-  import Wyvern.TestHelpers
+  import WyvernTest.TestHelpers
 
   defmodule IndexView do
     use Wyvern.View, [

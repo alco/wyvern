@@ -1,4 +1,4 @@
-defmodule WyvernTest.LayeredLayout do
+defmodule WyvernTest.LayeredLayoutTest do
   use ExUnit.Case
 
   defmodule IndexViewDynamic do

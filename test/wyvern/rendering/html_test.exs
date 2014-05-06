@@ -1,8 +1,6 @@
 defmodule WyvernTest.HTML do
   use ExUnit.Case
 
-  import Wyvern.TestHelpers
-
   test "full-blown html" do
     attrs = %{
       title: "Test Page",
@@ -12,9 +10,11 @@ defmodule WyvernTest.HTML do
       then: "then",
     }
 
-    layers = ["layout", "index"]
+    views_root = WyvernTest.TestHelpers.views_root
 
+    layers = ["layout", "index"]
     config = [views_root: views_root, attrs: attrs]
+
     result = Wyvern.render_view(layers, config)
     expected = File.read!(Path.join(views_root, "layout_rendered.html"))
 
