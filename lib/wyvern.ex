@@ -320,6 +320,10 @@ defmodule Wyvern do
     end
   end
 
+  defp build_compiled_template({:layout, modname}, _config) do
+    modname
+  end
+
   defp gen_mod_name() do
     {mega, sec, micro} = :os.timestamp()
     t = "#{mega}#{sec}#{micro}"
