@@ -79,16 +79,18 @@ defmodule WyvernTest.LayeredLayout do
 
 
   test "compiled layout" do
-    layers = [
-      {:inline, "<%= @title %>: -> <%= yield %> <-"},
-      {:inline, "<%= yield :head %>...<%= yield %>."},
-    ]
-    layout = Wyvern.compile_layout(layers, attrs: [title: "hello"])
+    defmodule CompiledLayout do
+      require Wyvern
+      Wyvern.layout_to_function([
+        {:inline, "<%= @title %>: -> <%= yield %> <-"},
+        {:inline, "<%= yield :head %>...<%= yield %>."},
+      ], attrs: [title: "hello"])
+    end
 
     template = "<% content_for :head do %>hi<% end %>I am a view"
     expected = "hello: -> hi...I am a view. <-"
 
-    assert Wyvern.render_view([layout, {:inline, template}]) == expected
+    assert Wyvern.render_view([CompiledLayout, {:inline, template}]) == expected
   end
 
 
