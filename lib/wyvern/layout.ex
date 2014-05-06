@@ -16,8 +16,11 @@ defmodule Wyvern.Layout do
       raise ArgumentError, message: "A layout cannot be used as a view, i.e. it cannot be a leaf layer"
     end
 
+    static_attrs = Macro.escape(opts[:static_attrs]) || []
+
     q = quote context: nil do
       def render(content, fragments, attrs) do
+        attrs = unquote(static_attrs) ++ attrs
         unquote(quoted)
       end
     end

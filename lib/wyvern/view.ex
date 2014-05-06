@@ -16,8 +16,11 @@ defmodule Wyvern.View do
       raise ArgumentError, message: "A view is not allowed to have 'yield' placeholders"
     end
 
+    static_attrs = Macro.escape(opts[:static_attrs]) || []
+
     q = quote context: nil do
       def render(attrs) do
+        attrs = unquote(static_attrs) ++ attrs
         unquote(quoted)
       end
     end
