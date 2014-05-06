@@ -234,9 +234,14 @@ defmodule Wyvern do
 
 
   defp wrap_quoted(quoted, config) do
+    imports = case config[:imports] do
+      nil -> nil
+      list -> Enum.map(list, fn mod -> quote do: import unquote(mod) end)
+    end
     quote do
       unquote(@common_imports)
       unquote(if config[:ext] == "html", do: @html_imports)
+      unquote(imports)
       unquote(quoted)
     end
   end
