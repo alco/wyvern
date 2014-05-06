@@ -34,7 +34,7 @@ defmodule WyvernTest.FragmentTest do
       {:inline, "<%= yield %>"},
       {:inline, "<%= yield :head %>...<%= yield %>"},
     ]
-    Wyvern.render_view(layers) == "..."
+    assert Wyvern.render_view(layers) == "..."
   end
 
   test "only named yields in layout" do

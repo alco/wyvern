@@ -382,11 +382,11 @@ defmodule Wyvern do
   # FIXME: 2-tuple is also a valid quoted form, so we need to distinguish
   # <% yield :name %> from [yield: :name]
 
-  defp replace_fragments_dynamic({:yield, nil}) do
+  defp replace_fragments_dynamic({{:yield, nil}}) do
     quote [context: nil], do: content
   end
 
-  defp replace_fragments_dynamic({:yield, section}) do
+  defp replace_fragments_dynamic({{:yield, section}}) do
     quote [context: nil], do: fragments[unquote(section)]
   end
 
@@ -432,11 +432,11 @@ defmodule Wyvern do
   # FIXME: 2-tuple is also a valid quoted form, so we need to distinguish
   # <% yield :name %> from [yield: :name]
 
-  defp replace_fragments_static({:yield, nil}, _fragments, content) do
+  defp replace_fragments_static({{:yield, nil}}, _fragments, content) do
     content
   end
 
-  defp replace_fragments_static({:yield, section}, fragments, _content) do
+  defp replace_fragments_static({{:yield, section}}, fragments, _content) do
     fragments[section]
   end
 

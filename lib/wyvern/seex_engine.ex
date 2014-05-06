@@ -15,7 +15,7 @@ defmodule Wyvern.SuperSmartEngine do
 
   def handle_expr(buffer, marker, expr, state) do
     #IO.puts "handle_expr ... \"=\" #{inspect expr}"
-    expr = transform(expr, state)
+    expr = transform(expr, state) |> validate_expr(marker)
 
     q = case marker do
       "=" ->
@@ -37,17 +37,17 @@ defmodule Wyvern.SuperSmartEngine do
 
   defp transform({:yield, _, nil}, {pid, _config}) do
     send(pid, :yield)
-    {:yield, nil}
+    {{:yield, nil}}
   end
 
   defp transform({:yield, _, [section]}, {pid, _config}) do
     send(pid, :yield)
-    {:yield, section}
+    {{:yield, section}}
   end
 
   defp transform({:content_for, _, [section, [do: quoted]]}, {pid, _config}) do
     send(pid, {:fragment, [{section, quoted}]})
-    nil
+    {:content_for}
   end
 
   defp transform({:include, _, [partial]}, state) do
@@ -57,6 +57,21 @@ defmodule Wyvern.SuperSmartEngine do
   defp transform(other, _) do
     replace_attr_refs(other)
   end
+
+
+  defp validate_expr({:content_for}, marker) do
+    if marker == "=" do
+      raise RuntimeError, message: "content_for cannot be used with '='"
+    end
+    # intentionally return nil
+  end
+
+  defp validate_expr({{:yield, _}}, marker) when marker != "=" do
+    raise RuntimeError, message: "yield has to be used with '=', e.g. <%= yield %>"
+  end
+
+  defp validate_expr(other, _), do: other
+
 
   defp replace_attr_refs({:@, _, [{name, _, atom}]})
                                         when is_atom(name) and is_atom(atom) do
