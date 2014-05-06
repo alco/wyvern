@@ -78,6 +78,20 @@ defmodule WyvernTest.LayeredLayout do
   end
 
 
+  test "compiled layout" do
+    layers = [
+      {:inline, "<%= @title %>: -> <%= yield %> <-"},
+      {:inline, "<%= yield :head %>...<%= yield %>."},
+    ]
+    layout = Wyvern.compile_layout(layers, attrs: [title: "hello"])
+
+    template = "<% content_for :head do %>hi<% end %>I am a view"
+    expected = "hello: -> hi...I am a view. <-"
+
+    assert Wyvern.render_view([layout, {:inline, template}]) == expected
+  end
+
+
   defmodule MixedLayout do
     use Wyvern.Layout, [
       layers: [

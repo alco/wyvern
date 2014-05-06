@@ -43,6 +43,34 @@ defmodule Wyvern do
     end
   end
 
+  def compile_layout(layers, config) do
+    key = :erlang.phash2({layers, config})
+    if mod = Wyvern.Cache.get(key) do
+      mod
+    else
+      layers_to_quoted(layers, config, false)
+      |> wrap_in_module(config[:attrs], key)
+    end
+  end
+
+
+  defp wrap_in_module({quoted, false}, attrs, key) do
+    static_attrs = Macro.escape(attrs) || []
+
+    q = quote context: nil do
+      def render(content, fragments, attrs) do
+        attrs = unquote(static_attrs) ++ attrs
+        unquote(quoted)
+      end
+    end
+
+    #q |> IO.inspect |> Macro.to_string |> IO.puts
+
+    {:module, name, _beam, _} = Module.create(gen_mod_name(), q)
+    Wyvern.Cache.put(key, name)
+    name
+  end
+
 
   defp write_to_file_if_needed(data, name, path, config) do
     opts = config[:file_opts]
