@@ -3,7 +3,7 @@ defmodule WyvernTest.InvalidTest do
 
   test "layout as view" do
     # FIXME: be more specific about the exception
-    assert_raise ArgumentError, fn ->
+    assert_raise CompileError, fn ->
       defmodule SampleView do
         use Wyvern.View, [
           layers: [{:inline, "<%= yield %>"}],
@@ -12,7 +12,7 @@ defmodule WyvernTest.InvalidTest do
     end
 
     # FIXME: be more specific about the exception
-    assert_raise ArgumentError, fn ->
+    assert_raise CompileError, fn ->
       defmodule SampleView do
         use Wyvern.View, [
           layers: [{:inline, "<%= yield :head %>"}],

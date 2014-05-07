@@ -70,9 +70,23 @@ defmodule Wyvern do
   end
 
 
+
   defmacro compile_layouts(layouts) do
     for [{:layers, layers} | config] <- layouts do
       compile_layout(layers, config, :user_funs)
+    end
+  end
+
+
+  defmacro compile_views(views) do
+    funs = for [{:layers, layers} | config] <- views do
+      compile_view(layers, config, :user_funs)
+    end
+
+    quote context: nil do
+      def render(name, attrs \\ [])
+
+      unquote(funs)
     end
   end
 
@@ -105,6 +119,28 @@ defmodule Wyvern do
 
         def render(layers, config \\ []) do
           unquote(__MODULE__).render_view([__MODULE__|List.wrap(layers)], config)
+        end
+      end
+    end
+  end
+
+  @doc false
+  def compile_view(layers, config, funs \\ nil) do
+    {quoted, _} = layers_to_quoted(layers, config, false)
+    static_attrs = Macro.escape(config[:attrs]) || []
+
+    if funs == :user_funs do
+      quote context: nil do
+        def render(unquote(config[:name]), attrs) do
+          attrs = unquote(static_attrs) ++ attrs
+          unquote(quoted)
+        end
+      end
+    else
+      quote context: nil do
+        def render(attrs \\ []) do
+          attrs = unquote(static_attrs) ++ attrs
+          unquote(quoted)
         end
       end
     end
