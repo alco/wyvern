@@ -43,6 +43,32 @@ defmodule Wyvern do
     end
   end
 
+
+  def define_layout(layers, opts \\ []) do
+    key = :erlang.phash2({layers, opts})
+
+    if mod = Wyvern.Cache.get(key) do
+      mod
+    else
+      {quoted, _} = layers_to_quoted(layers, [], false)
+      static_attrs = Macro.escape(opts[:attrs]) || []
+
+      module_body = quote context: nil do
+        def render(content, fragments, attrs) do
+          attrs = unquote(static_attrs) ++ attrs
+          unquote(quoted)
+        end
+      end
+
+      {:module, name, _beam, _} = Module.create(gen_mod_name(), module_body)
+      Wyvern.Cache.put(key, name)
+      if layout_alias = opts[:name] do
+        Wyvern.Cache.put(layout_alias, {:layout, name})
+      end
+      name
+    end
+  end
+
   defmacro layout_to_function(layers, config) do
     layers_to_quoted(layers, config, false)
     |> wrap_in_function(config[:attrs])
@@ -287,9 +313,13 @@ defmodule Wyvern do
   end
 
   defp preprocess_template(name, {pid, config}) when is_binary(name) do
-    {path, config} = template_path_from_name(name, config)
-    config = Keyword.put(config, :current_template_dir, Path.dirname(path))
-    SEEx.compile_file(path, {pid, config}, [engine: Wyvern.SuperSmartEngine])
+    if mod = Wyvern.Cache.get(name) do
+      mod
+    else
+      {path, config} = template_path_from_name(name, config)
+      config = Keyword.put(config, :current_template_dir, Path.dirname(path))
+      SEEx.compile_file(path, {pid, config}, [engine: Wyvern.SuperSmartEngine])
+    end
   end
 
 
