@@ -26,6 +26,19 @@ defmodule WyvernTest.FragmentTest do
     assert Wyvern.render_view(layers) == expected
   end
 
+  test "autocompile from file" do
+    layers = ["simple_layout", "basic"]
+    config = [views_root: WyvernTest.TestHelpers.views_root]
+
+    expected = "...Hello !\n...\n"
+
+    assert Wyvern.render_view(layers, config) == expected
+
+    assert Wyvern.render_view(layers, [autocompile: true] ++ config) == expected
+    # this second call is required to make sure autocompilation works
+    assert Wyvern.render_view(layers, [autocompile: true] ++ config) == expected
+  end
+
   test "yields with no content" do
     assert Wyvern.render_view({:inline, "<%= yield %>"}) == ""
     assert Wyvern.render_view({:inline, "<%= yield :head %>"}) == ""

@@ -330,7 +330,7 @@ defmodule Wyvern do
   end
 
   defp build_compiled_template({stage, view, fragments}, config) do
-    if cached = Wyvern.Cache.get(view) do
+    if cached = Wyvern.Cache.get({:autocompiled, view}) do
       #IO.puts "Got from cache: #{inspect cached}"
       cached
     else
@@ -342,7 +342,7 @@ defmodule Wyvern do
         end
       end
       {:module, name, _beam, _} = Module.create(gen_mod_name(), module_body)
-      Wyvern.Cache.put(view, name)
+      Wyvern.Cache.put({:autocompiled, view}, name)
       name
     end
   end
