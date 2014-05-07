@@ -351,7 +351,7 @@ defmodule Wyvern do
   end
 
   defp preprocess_template(name, {pid, config}) when is_binary(name) do
-    if mod = Wyvern.Cache.get(name) do
+    if mod = (Wyvern.Cache.up?() && Wyvern.Cache.get(name)) do
       mod
     else
       {path, config} = template_path_from_name(name, config)

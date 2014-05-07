@@ -9,6 +9,10 @@ defmodule Wyvern.Cache do
     {:ok, %{}}
   end
 
+  def up?() do
+    Process.whereis(Wyvern.Cache) != nil
+  end
+
   def get(key) do
     :gen_server.call(__MODULE__, {:get, key})
   end
