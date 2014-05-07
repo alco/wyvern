@@ -34,7 +34,7 @@ defmodule Wyvern.Cache do
   end
 
   def handle_call({:reset, state}, _, _) do
-    {:reply, :ok, state}
+    {:reply, :ok, state || %{}}
   end
 
   def handle_call(:get_state, _, map) do

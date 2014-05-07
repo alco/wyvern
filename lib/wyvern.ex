@@ -69,6 +69,12 @@ defmodule Wyvern do
     end
   end
 
+
+  def purge_cache(_bucket) do
+    Wyvern.Cache.reset(nil)
+  end
+
+
   defmacro layout_to_function(layers, config) do
     layers_to_quoted(layers, config, false)
     |> wrap_in_function(config[:attrs])
