@@ -34,4 +34,31 @@ defmodule WyvernTest.CompiledLayoutTest do
     expected = "top ->--This is a view.--<- content || This is a footer."
     assert Layouts.render("layout:compiled", {:inline, template}) == expected
   end
+
+
+  defmodule SingleLayout do
+    layers = [
+      {:inline, "top -><%= yield %><- content || <%= yield :footer %>"},
+      {:inline, "--<%= yield %>--"},
+    ]
+    use Wyvern.Layout, [
+      layers: layers,
+    ]
+  end
+
+  test "single module layout" do
+    template = "This is a view.<% content_for :footer do %>This is a footer.<% end %>"
+    layers = [
+      SingleLayout,
+      {:inline, template},
+    ]
+    expected = "top ->--This is a view.--<- content || This is a footer."
+    assert Wyvern.render_view(layers) == expected
+  end
+
+  test "single module render function" do
+    template = "This is a view.<% content_for :footer do %>This is a footer.<% end %>"
+    expected = "top ->--This is a view.--<- content || This is a footer."
+    assert SingleLayout.render({:inline, template}) == expected
+  end
 end

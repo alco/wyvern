@@ -54,7 +54,7 @@ defmodule Wyvern do
       static_attrs = Macro.escape(config[:attrs]) || []
 
       module_body = quote context: nil do
-        def render(content, fragments, attrs) do
+        def _render(content, fragments, attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
         end
@@ -72,21 +72,39 @@ defmodule Wyvern do
 
   defmacro compile_layouts(layouts) do
     for [{:layers, layers} | config] <- layouts do
-      {quoted, _} = layers_to_quoted(layers, config, false)
-      static_attrs = Macro.escape(config[:attrs]) || []
+      compile_layout(layers, config, :user_funs)
+    end
+  end
 
+  @doc false
+  def compile_layout(layers, config, funs \\ nil) do
+    {quoted, _} = layers_to_quoted(layers, config, false)
+    static_attrs = Macro.escape(config[:attrs]) || []
+
+    if funs == :user_funs do
       quote context: nil do
-        def render_layout(unquote(config[:name]), content, fragments, attrs) do
+        def _render_layout(unquote(config[:name]), content, fragments, attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
         end
 
         def layout(unquote(config[:name])=name) do
-          {:apply, __MODULE__, :render_layout, name}
+          {:apply, __MODULE__, :_render_layout, name}
         end
 
         def render(unquote(config[:name])=name, layers, config \\ []) do
           unquote(__MODULE__).render_view([layout(name)|List.wrap(layers)], config)
+        end
+      end
+    else
+      quote context: nil do
+        def _render(content, fragments, attrs) do
+          attrs = unquote(static_attrs) ++ attrs
+          unquote(quoted)
+        end
+
+        def render(layers, config \\ []) do
+          unquote(__MODULE__).render_view([__MODULE__|List.wrap(layers)], config)
         end
       end
     end
@@ -107,7 +125,7 @@ defmodule Wyvern do
     static_attrs = Macro.escape(attrs) || []
 
     q = quote context: nil do
-      def render(content, fragments, attrs) do
+      def _render(content, fragments, attrs) do
         attrs = unquote(static_attrs) ++ attrs
         unquote(quoted)
       end
@@ -272,7 +290,7 @@ defmodule Wyvern do
   end
 
   defp render_modules_with_content([m|rest], content, fragments, attrs) do
-    {new_content, m_fragments} = m.render(content, fragments, attrs)
+    {new_content, m_fragments} = m._render(content, fragments, attrs)
     new_fragments = merge_compiled_fragments(fragments, m_fragments)
     render_modules_with_content(rest, new_content, new_fragments, attrs)
   end
@@ -339,7 +357,7 @@ defmodule Wyvern do
   end
 
   defp preprocess_template(modname, _) when is_atom(modname) do
-    if Keyword.get_values(modname.__info__(:functions), :render) != [3] do
+    if Keyword.get_values(modname.__info__(:functions), :_render) != [3] do
       raise ArgumentError, message: "Expected a layout module in layers"
     end
     {:layout, modname}
@@ -374,7 +392,7 @@ defmodule Wyvern do
       quoted = build_template_dynamic([{stage, fragments}]) |> wrap_quoted(config)
 
       module_body = quote context: nil do
-        def render(content, fragments, attrs) do
+        def _render(content, fragments, attrs) do
           {unquote(quoted), unquote(fragments)}
         end
       end
@@ -421,7 +439,7 @@ defmodule Wyvern do
 
   defp build_template_dynamic([{:layout, modname}|rest], fragments, content) do
     quoted = quote context: nil do
-      unquote(modname).render(unquote(content), unquote(fragments), attrs)
+      unquote(modname)._render(unquote(content), unquote(fragments), attrs)
     end
     build_template_dynamic(rest, fragments, quoted)
   end
@@ -481,7 +499,7 @@ defmodule Wyvern do
 
   defp build_template_static([{:layout, modname}|rest], fragments, content) do
     quoted = quote context: nil do
-      unquote(modname).render(unquote(content), unquote(fragments), attrs)
+      unquote(modname)._render(unquote(content), unquote(fragments), attrs)
     end
     build_template_static(rest, fragments, quoted)
   end

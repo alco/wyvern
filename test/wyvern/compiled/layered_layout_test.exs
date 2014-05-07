@@ -30,16 +30,16 @@ defmodule WyvernTest.LayeredLayoutTest do
   end
 
   test "layout rendering" do
-    assert BaseLayout.__info__(:functions) == [render: 3]
-    assert NavbarLayout.__info__(:functions) == [render: 3]
+    assert Keyword.get_values(BaseLayout.__info__(:functions), :_render) == [3]
+    assert Keyword.get_values(NavbarLayout.__info__(:functions), :_render) == [3]
 
-    assert BaseLayout.render(nil, [], []) == "->  <-"
-    assert BaseLayout.render("content", [], []) == "-> content <-"
+    assert BaseLayout._render(nil, [], []) == "->  <-"
+    assert BaseLayout._render("content", [], []) == "-> content <-"
 
-    assert NavbarLayout.render(nil, [], []) == "...."
-    assert NavbarLayout.render("content", [], []) == "...content."
+    assert NavbarLayout._render(nil, [], []) == "...."
+    assert NavbarLayout._render("content", [], []) == "...content."
 
-    result = NavbarLayout.render("content", [head: "hi"], [])
+    result = NavbarLayout._render("content", [head: "hi"], [])
     assert result == "hi...content."
   end
 
@@ -70,10 +70,10 @@ defmodule WyvernTest.LayeredLayoutTest do
       ]
     end
 
-    assert CombinedLayout.render(nil, [], []) == "-> .... <-"
-    assert CombinedLayout.render("content", [], []) == "-> ...content. <-"
+    assert CombinedLayout._render(nil, [], []) == "-> .... <-"
+    assert CombinedLayout._render("content", [], []) == "-> ...content. <-"
 
-    result = CombinedLayout.render("content", [head: "hi"], [])
+    result = CombinedLayout._render("content", [head: "hi"], [])
     assert result == "-> hi...content. <-"
   end
 
@@ -104,9 +104,9 @@ defmodule WyvernTest.LayeredLayoutTest do
   end
 
   test "mixed layout" do
-    assert MixedLayout.render(nil, [], []) == "-> .... <-"
-    assert MixedLayout.render("content", [], []) == "-> ...content. <-"
-    assert MixedLayout.render("content", [head: "HEAD"], []) == "-> HEAD...content. <-"
+    assert MixedLayout._render(nil, [], []) == "-> .... <-"
+    assert MixedLayout._render("content", [], []) == "-> ...content. <-"
+    assert MixedLayout._render("content", [head: "HEAD"], []) == "-> HEAD...content. <-"
   end
 
 
