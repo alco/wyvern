@@ -75,7 +75,7 @@ defmodule Wyvern do
       {quoted, _} = layers_to_quoted(layers, config, false)
       static_attrs = Macro.escape(config[:attrs]) || []
 
-      quoted_funcs = quote context: nil do
+      quote context: nil do
         def render_layout(unquote(config[:name]), content, fragments, attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
@@ -85,11 +85,10 @@ defmodule Wyvern do
           {:apply, __MODULE__, :render_layout, name}
         end
 
-        #def render(unquote(config[:name])=layout, layers, config) do
-          #unquote(__MODULE__).render_view([layout|layers], config)
-        #end
+        def render(unquote(config[:name])=name, layers, config \\ []) do
+          unquote(__MODULE__).render_view([layout(name)|List.wrap(layers)], config)
+        end
       end
-      quoted_funcs
     end
   end
 

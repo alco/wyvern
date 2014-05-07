@@ -20,5 +20,18 @@ defmodule WyvernTest.CompiledLayoutTest do
     ]
     expected = "top ->--This is a view.--<- content || This is a footer."
     assert Wyvern.render_view(layers) == expected
+
+    #assert Wyvern.render_view(layers, autocompile: true) == expected
+    #assert Wyvern.render_view(layers, autocompile: true) == expected
+  end
+
+  test "render function" do
+    template = "This is a view.<% content_for :footer do %>This is a footer.<% end %>"
+    layers = [
+      Layouts.layout("layout:compiled"),
+      {:inline, template},
+    ]
+    expected = "top ->--This is a view.--<- content || This is a footer."
+    assert Layouts.render("layout:compiled", {:inline, template}) == expected
   end
 end
