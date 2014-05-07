@@ -44,32 +44,32 @@ defmodule WyvernTest.LayeredLayoutTest do
   end
 
 
-  defmodule IndexViewStatic do
-    use Wyvern.View, [
-      layers: [
-        BaseLayout,
-        NavbarLayout,
-        {:inline, "hi<% content_for :head do %>HEAD<% end %>"},
-      ]
-    ]
-  end
-
   test "static layout" do
+    defmodule IndexViewStatic do
+      use Wyvern.View, [
+        layers: [
+          BaseLayout,
+          NavbarLayout,
+          {:inline, "hi<% content_for :head do %>HEAD<% end %>"},
+        ]
+      ]
+    end
+
     assert IndexViewStatic.__info__(:functions) == [render: 1]
     assert IndexViewStatic.render([]) == "-> HEAD...hi. <-"
   end
 
 
-  defmodule CombinedLayout do
-    use Wyvern.Layout, [
-      layers: [
-        {:inline, "-> <%= yield %> <-"},
-        {:inline, "<%= yield :head %>...<%= yield %>."},
-      ]
-    ]
-  end
-
   test "combined layout" do
+    defmodule CombinedLayout do
+      use Wyvern.Layout, [
+        layers: [
+          {:inline, "-> <%= yield %> <-"},
+          {:inline, "<%= yield :head %>...<%= yield %>."},
+        ]
+      ]
+    end
+
     assert CombinedLayout.render(nil, [], []) == "-> .... <-"
     assert CombinedLayout.render("content", [], []) == "-> ...content. <-"
 
@@ -122,5 +122,23 @@ defmodule WyvernTest.LayeredLayoutTest do
 
   test "mixed static dynamic layout" do
     assert MixedView.render([]) == "-> HHH...some### @@@more!!!content. <-"
+  end
+
+
+  # tests the bug where 'yield :more' would not get any content from the leaf
+  # layer if there were more layers in-between
+  defmodule TransitiveLayout do
+    use Wyvern.Layout, [
+      layers: [
+        {:inline, "<%= yield :more %><%= yield %>"},
+        {:inline, "-<%= yield %>-"},
+      ]
+    ]
+  end
+
+  test "transitive fragments layout" do
+    template = "hello<% content_for :more do %>[more content]<% end %>"
+    expected = "[more content]-hello-"
+    assert Wyvern.render_view([TransitiveLayout, {:inline, template}]) == expected
   end
 end

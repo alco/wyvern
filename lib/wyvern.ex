@@ -304,9 +304,6 @@ defmodule Wyvern do
       #IO.puts "Got from cache: #{inspect cached}"
       cached
     else
-      # Leaf layer has a yield placeholder. This means that it'll be compiled
-      # into a layout and it should accept its content and any additional
-      # fragments as function arguments at run time
       quoted = build_template_dynamic([{stage, fragments}]) |> wrap_quoted(config)
 
       module_body = quote context: nil do
@@ -363,7 +360,9 @@ defmodule Wyvern do
   end
 
   defp build_template_dynamic([{quoted, stage_frags}|rest], fragments, content) do
-    quoted = replace_fragments_static(quoted, fragments, content)
+    # we use replace_fragments_static here to merge all layers into one,
+    # but we still need to accept additional fragments as arguments
+    quoted = replace_fragments_static(quoted, fragments, content, true)
     new_fragments = Wyvern.View.Helpers.merge_fragments(stage_frags, fragments)
     build_template_dynamic(rest, new_fragments, quoted)
   end
@@ -419,33 +418,42 @@ defmodule Wyvern do
   end
 
 
-  defp replace_fragments_static({f, meta, args}, fragments, content) when is_list(args) do
-    {replace_fragments_static(f, fragments, content),
+  defp replace_fragments_static(quoted, fragments, content), do:
+    replace_fragments_static(quoted, fragments, content, false)
+
+  defp replace_fragments_static({f, meta, args}, fragments, content, non_leaf?) when is_list(args) do
+    {replace_fragments_static(f, fragments, content, non_leaf?),
      meta,
-     replace_fragments_static(args, fragments, content)}
+     replace_fragments_static(args, fragments, content, non_leaf?)}
   end
 
-  defp replace_fragments_static(list, fragments, content) when is_list(list) do
-    Enum.map(list, &replace_fragments_static(&1, fragments, content))
+  defp replace_fragments_static(list, fragments, content, non_leaf?) when is_list(list) do
+    Enum.map(list, &replace_fragments_static(&1, fragments, content, non_leaf?))
   end
 
   # FIXME: 2-tuple is also a valid quoted form, so we need to distinguish
   # <% yield :name %> from [yield: :name]
 
-  defp replace_fragments_static({{:yield, nil}}, _fragments, content) do
+  defp replace_fragments_static({{:yield, nil}}, _fragments, content, _non_leaf?) do
     content
   end
 
-  defp replace_fragments_static({{:yield, section}}, fragments, _content) do
-    fragments[section]
+  defp replace_fragments_static({{:yield, section}}, fragments, _content, non_leaf?) do
+    if non_leaf? do
+      quote [context: nil] do
+        unquote(fragments[section] || "") <> (fragments[unquote(section)] || "")
+      end
+    else
+      fragments[section]
+    end
   end
 
-  defp replace_fragments_static({a, b}, fragments, content) do
-    {replace_fragments_static(a, fragments, content),
-     replace_fragments_static(b, fragments, content)}
+  defp replace_fragments_static({a, b}, fragments, content, non_leaf?) do
+    {replace_fragments_static(a, fragments, content, non_leaf?),
+     replace_fragments_static(b, fragments, content, non_leaf?)}
   end
 
-  defp replace_fragments_static(other, _, _) do
+  defp replace_fragments_static(other, _, _, _) do
     other
   end
 
