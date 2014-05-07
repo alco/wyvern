@@ -404,6 +404,8 @@ defmodule Wyvern do
   end
 
   defp preprocess_template(name, {pid, config}) when is_binary(name) do
+    # FIXME: we can benefit from caching at compile time when multiple layouts/views
+    # are being precompiled. Think of a way to enable this.
     if mod = (Wyvern.Cache.up?() && Wyvern.Cache.get(name)) do
       mod
     else
