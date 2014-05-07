@@ -70,6 +70,29 @@ defmodule Wyvern do
   end
 
 
+  defmacro compile_layouts(layouts) do
+    for [{:layers, layers} | config] <- layouts do
+      {quoted, _} = layers_to_quoted(layers, config, false)
+      static_attrs = Macro.escape(config[:attrs]) || []
+
+      quoted_funcs = quote context: nil do
+        def render_layout(unquote(config[:name]), content, fragments, attrs) do
+          attrs = unquote(static_attrs) ++ attrs
+          unquote(quoted)
+        end
+
+        def layout(unquote(config[:name])=name) do
+          {:apply, __MODULE__, :render_layout, name}
+        end
+
+        #def render(unquote(config[:name])=layout, layers, config) do
+          #unquote(__MODULE__).render_view([layout|layers], config)
+        #end
+      end
+      quoted_funcs
+    end
+  end
+
   def purge_cache(_bucket) do
     Wyvern.Cache.reset(nil)
   end
@@ -208,6 +231,7 @@ defmodule Wyvern do
         |> Enum.map(fn
           {stage, _view, fragments} -> {stage, fragments}
           {:layout, _}=stage -> stage
+          {:layout_fn, _}=stage -> stage
         end)
         |> build_template(leaf_has_yield)
         |> wrap_quoted(config)
@@ -224,6 +248,10 @@ defmodule Wyvern do
   defp validate_rest_stages([]), do: []
 
   defp validate_rest_stages([{{:layout, _}=stage, _, _, _} | rest]) do
+    [stage | validate_rest_stages(rest)]
+  end
+
+  defp validate_rest_stages([{{:layout_fn, _}=stage, _, _, _} | rest]) do
     [stage | validate_rest_stages(rest)]
   end
 
@@ -318,6 +346,10 @@ defmodule Wyvern do
     {:layout, modname}
   end
 
+  defp preprocess_template({:apply, mod, fun, name}, _) do
+    {:layout_fn, {mod, fun, name}}
+  end
+
   defp preprocess_template(name, {pid, config}) when is_binary(name) do
     if mod = Wyvern.Cache.get(name) do
       mod
@@ -395,6 +427,14 @@ defmodule Wyvern do
     build_template_dynamic(rest, fragments, quoted)
   end
 
+  defp build_template_dynamic([{:layout_fn, {mod,fun,name}}|rest], fragments, content) do
+    quoted = quote context: nil do
+      apply(unquote(mod), unquote(fun),
+                  [unquote(name), unquote(content), unquote(fragments), attrs])
+    end
+    build_template_dynamic(rest, fragments, quoted)
+  end
+
   defp build_template_dynamic([{quoted, stage_frags}|rest], fragments, content) do
     # we use replace_fragments_static here to merge all layers into one,
     # but we still need to accept additional fragments as arguments
@@ -443,6 +483,14 @@ defmodule Wyvern do
   defp build_template_static([{:layout, modname}|rest], fragments, content) do
     quoted = quote context: nil do
       unquote(modname).render(unquote(content), unquote(fragments), attrs)
+    end
+    build_template_static(rest, fragments, quoted)
+  end
+
+  defp build_template_static([{:layout_fn, {mod,fun,name}}|rest], fragments, content) do
+    quoted = quote context: nil do
+      apply(unquote(mod), unquote(fun),
+                  [unquote(name), unquote(content), unquote(fragments), attrs])
     end
     build_template_static(rest, fragments, quoted)
   end
