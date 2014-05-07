@@ -44,14 +44,14 @@ defmodule Wyvern do
   end
 
 
-  def define_layout(layers, opts \\ []) do
-    key = :erlang.phash2({layers, opts})
+  def define_layout(layers, config \\ []) do
+    key = :erlang.phash2({layers, config})
 
     if mod = Wyvern.Cache.get(key) do
       mod
     else
-      {quoted, _} = layers_to_quoted(layers, [], false)
-      static_attrs = Macro.escape(opts[:attrs]) || []
+      {quoted, _} = layers_to_quoted(layers, config, false)
+      static_attrs = Macro.escape(config[:attrs]) || []
 
       module_body = quote context: nil do
         def render(content, fragments, attrs) do
@@ -62,7 +62,7 @@ defmodule Wyvern do
 
       {:module, name, _beam, _} = Module.create(gen_mod_name(), module_body)
       Wyvern.Cache.put(key, name)
-      if layout_alias = opts[:name] do
+      if layout_alias = config[:name] do
         Wyvern.Cache.put(layout_alias, {:layout, name})
       end
       name
