@@ -7,7 +7,7 @@ defmodule Wyvern.SuperSmartEngine do
 
   def handle_text(buffer, text, state) do
     #IO.puts "handle_text ... #{inspect text}"
-    q = quote do
+    q = quote context: nil do
       unquote(buffer) <> unquote(text)
     end
     { q, state }
@@ -19,13 +19,13 @@ defmodule Wyvern.SuperSmartEngine do
 
     q = case marker do
       "=" ->
-        quote do
+        quote context: nil do
           tmp = unquote(buffer)
           tmp <> to_string(unquote(expr))
         end
 
       "" ->
-        quote do
+        quote context: nil do
           tmp = unquote(buffer)
           unquote(expr)
           tmp
@@ -75,7 +75,7 @@ defmodule Wyvern.SuperSmartEngine do
 
   defp replace_attr_refs({:@, _, [{name, _, atom}]})
                                         when is_atom(name) and is_atom(atom) do
-    quote do: attrs[unquote(name)]
+    quote [context: nil], do: attrs[unquote(name)]
   end
 
   defp replace_attr_refs({f, meta, args}) when is_list(args) do

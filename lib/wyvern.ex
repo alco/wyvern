@@ -53,7 +53,7 @@ defmodule Wyvern do
       {quoted, _} = layers_to_quoted(layers, config, false)
       static_attrs = Macro.escape(config[:attrs]) || []
 
-      module_body = quote do
+      module_body = quote context: nil do
         def _render(content, fragments, attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
@@ -83,7 +83,7 @@ defmodule Wyvern do
       compile_view(layers, config, :user_funs)
     end
 
-    quote do
+    quote context: nil do
       def render(name, attrs \\ [])
 
       unquote(funs)
@@ -96,7 +96,7 @@ defmodule Wyvern do
     static_attrs = Macro.escape(config[:attrs]) || []
 
     if funs == :user_funs do
-      quote do
+      quote context: nil do
         def _render_layout(unquote(config[:name]), content, fragments, attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
@@ -111,7 +111,7 @@ defmodule Wyvern do
         end
       end
     else
-      quote do
+      quote context: nil do
         def _render(content, fragments, attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
@@ -130,14 +130,14 @@ defmodule Wyvern do
     static_attrs = Macro.escape(config[:attrs]) || []
 
     if funs == :user_funs do
-      quote do
+      quote context: nil do
         def render(unquote(config[:name]), attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
         end
       end
     else
-      quote do
+      quote context: nil do
         def render(attrs \\ []) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
@@ -160,7 +160,7 @@ defmodule Wyvern do
   defp wrap_in_function({quoted, false}, attrs) do
     static_attrs = Macro.escape(attrs) || []
 
-    q = quote do
+    q = quote context: nil do
       def _render(content, fragments, attrs) do
         attrs = unquote(static_attrs) ++ attrs
         unquote(quoted)
@@ -429,7 +429,7 @@ defmodule Wyvern do
     else
       quoted = build_template_dynamic([{stage, fragments}]) |> wrap_quoted(config)
 
-      module_body = quote do
+      module_body = quote context: nil do
         def _render(content, fragments, attrs) do
           {unquote(quoted), unquote(fragments)}
         end
@@ -476,14 +476,14 @@ defmodule Wyvern do
   end
 
   defp build_template_dynamic([{:layout, modname}|rest], fragments, content) do
-    quoted = quote do
+    quoted = quote context: nil do
       unquote(modname)._render(unquote(content), unquote(fragments), attrs)
     end
     build_template_dynamic(rest, fragments, quoted)
   end
 
   defp build_template_dynamic([{:layout_fn, {mod,fun,name}}|rest], fragments, content) do
-    quoted = quote do
+    quoted = quote context: nil do
       apply(unquote(mod), unquote(fun),
                   [unquote(name), unquote(content), unquote(fragments), attrs])
     end
@@ -513,11 +513,11 @@ defmodule Wyvern do
   # <% yield :name %> from [yield: :name]
 
   defp replace_fragments_dynamic({{:yield, nil}}) do
-    quote do: content
+    quote [context: nil], do: content
   end
 
   defp replace_fragments_dynamic({{:yield, section}}) do
-    quote do: fragments[unquote(section)]
+    quote [context: nil], do: fragments[unquote(section)]
   end
 
   defp replace_fragments_dynamic({a, b}) do
@@ -536,14 +536,14 @@ defmodule Wyvern do
   end
 
   defp build_template_static([{:layout, modname}|rest], fragments, content) do
-    quoted = quote do
+    quoted = quote context: nil do
       unquote(modname)._render(unquote(content), unquote(fragments), attrs)
     end
     build_template_static(rest, fragments, quoted)
   end
 
   defp build_template_static([{:layout_fn, {mod,fun,name}}|rest], fragments, content) do
-    quoted = quote do
+    quoted = quote context: nil do
       apply(unquote(mod), unquote(fun),
                   [unquote(name), unquote(content), unquote(fragments), attrs])
     end
@@ -579,7 +579,7 @@ defmodule Wyvern do
 
   defp replace_fragments_static({{:yield, section}}, fragments, _content, non_leaf?) do
     if non_leaf? do
-      quote do
+      quote [context: nil] do
         unquote(fragments[section] || "") <> (fragments[unquote(section)] || "")
       end
     else

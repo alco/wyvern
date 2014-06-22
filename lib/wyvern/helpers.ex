@@ -11,7 +11,7 @@ defmodule Wyvern.View.Helpers do
 
   def merge_fragments(fragments, new_fragments) do
     Keyword.merge(fragments, new_fragments, fn(_, f1, f2) ->
-      quote do
+      quote context: nil do
         unquote(f1) <> unquote(f2)
       end
     end)
