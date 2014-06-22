@@ -53,7 +53,7 @@ defmodule Wyvern do
       {quoted, _} = layers_to_quoted(layers, config, false)
       static_attrs = Macro.escape(config[:attrs]) || []
 
-      module_body = quote context: nil do
+      module_body = quote context: :"wyvern-view-fragment" do
         def _render(content, fragments, attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
@@ -83,7 +83,7 @@ defmodule Wyvern do
       compile_view(layers, config, :user_funs)
     end
 
-    quote context: nil do
+    quote context: :"wyvern-view-fragment" do
       def render(name, attrs \\ [])
 
       unquote(funs)
@@ -96,7 +96,7 @@ defmodule Wyvern do
     static_attrs = Macro.escape(config[:attrs]) || []
 
     if funs == :user_funs do
-      quote context: nil do
+      quote context: :"wyvern-view-fragment" do
         def _render_layout(unquote(config[:name]), content, fragments, attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
@@ -111,7 +111,7 @@ defmodule Wyvern do
         end
       end
     else
-      quote context: nil do
+      quote context: :"wyvern-view-fragment" do
         def _render(content, fragments, attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
@@ -130,14 +130,14 @@ defmodule Wyvern do
     static_attrs = Macro.escape(config[:attrs]) || []
 
     if funs == :user_funs do
-      quote context: nil do
+      quote context: :"wyvern-view-fragment" do
         def render(unquote(config[:name]), attrs) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
         end
       end
     else
-      quote context: nil do
+      quote context: :"wyvern-view-fragment" do
         def render(attrs \\ []) do
           attrs = unquote(static_attrs) ++ attrs
           unquote(quoted)
@@ -160,7 +160,7 @@ defmodule Wyvern do
   defp wrap_in_function({quoted, false}, attrs) do
     static_attrs = Macro.escape(attrs) || []
 
-    q = quote context: nil do
+    q = quote context: :"wyvern-view-fragment" do
       def _render(content, fragments, attrs) do
         attrs = unquote(static_attrs) ++ attrs
         unquote(quoted)
@@ -359,7 +359,10 @@ defmodule Wyvern do
     else
       [content: nil, fragments: [], attrs: config[:attrs]]
     end
-    {result, _} = Code.eval_quoted(quoted, bindings)
+    quoted_bindings = Enum.map(bindings, fn {k, v} ->
+      {{k, :"wyvern-view-fragment"}, v}
+    end)
+    {result, _} = Code.eval_quoted(quoted, quoted_bindings)
     result
   end
 
@@ -429,7 +432,7 @@ defmodule Wyvern do
     else
       quoted = build_template_dynamic([{stage, fragments}]) |> wrap_quoted(config)
 
-      module_body = quote context: nil do
+      module_body = quote context: :"wyvern-view-fragment" do
         def _render(content, fragments, attrs) do
           {unquote(quoted), unquote(fragments)}
         end
@@ -476,14 +479,14 @@ defmodule Wyvern do
   end
 
   defp build_template_dynamic([{:layout, modname}|rest], fragments, content) do
-    quoted = quote context: nil do
+    quoted = quote context: :"wyvern-view-fragment" do
       unquote(modname)._render(unquote(content), unquote(fragments), attrs)
     end
     build_template_dynamic(rest, fragments, quoted)
   end
 
   defp build_template_dynamic([{:layout_fn, {mod,fun,name}}|rest], fragments, content) do
-    quoted = quote context: nil do
+    quoted = quote context: :"wyvern-view-fragment" do
       apply(unquote(mod), unquote(fun),
                   [unquote(name), unquote(content), unquote(fragments), attrs])
     end
@@ -513,11 +516,11 @@ defmodule Wyvern do
   # <% yield :name %> from [yield: :name]
 
   defp replace_fragments_dynamic({{:yield, nil}}) do
-    quote [context: nil], do: content
+    quote [context: :"wyvern-view-fragment"], do: content
   end
 
   defp replace_fragments_dynamic({{:yield, section}}) do
-    quote [context: nil], do: fragments[unquote(section)]
+    quote [context: :"wyvern-view-fragment"], do: fragments[unquote(section)]
   end
 
   defp replace_fragments_dynamic({a, b}) do
@@ -536,14 +539,14 @@ defmodule Wyvern do
   end
 
   defp build_template_static([{:layout, modname}|rest], fragments, content) do
-    quoted = quote context: nil do
+    quoted = quote context: :"wyvern-view-fragment" do
       unquote(modname)._render(unquote(content), unquote(fragments), attrs)
     end
     build_template_static(rest, fragments, quoted)
   end
 
   defp build_template_static([{:layout_fn, {mod,fun,name}}|rest], fragments, content) do
-    quoted = quote context: nil do
+    quoted = quote context: :"wyvern-view-fragment" do
       apply(unquote(mod), unquote(fun),
                   [unquote(name), unquote(content), unquote(fragments), attrs])
     end
@@ -579,7 +582,7 @@ defmodule Wyvern do
 
   defp replace_fragments_static({{:yield, section}}, fragments, _content, non_leaf?) do
     if non_leaf? do
-      quote [context: nil] do
+      quote [context: :"wyvern-view-fragment"] do
         unquote(fragments[section] || "") <> (fragments[unquote(section)] || "")
       end
     else

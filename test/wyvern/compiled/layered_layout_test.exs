@@ -12,7 +12,7 @@ defmodule WyvernTest.LayeredLayoutTest do
   end
 
   test "dynamic layers" do
-    assert IndexViewDynamic.__info__(:functions) == [render: 1]
+    assert IndexViewDynamic.__info__(:functions) == [render: 0, render: 1]
     assert IndexViewDynamic.render([]) == "-> HEAD...hi. <-"
   end
 
@@ -55,7 +55,7 @@ defmodule WyvernTest.LayeredLayoutTest do
       ]
     end
 
-    assert IndexViewStatic.__info__(:functions) == [render: 1]
+    assert IndexViewStatic.__info__(:functions) == [render: 0, render: 1]
     assert IndexViewStatic.render([]) == "-> HEAD...hi. <-"
   end
 

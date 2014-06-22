@@ -4,7 +4,7 @@ defmodule Wyvern.Mixfile do
   def project do
     [app: :wyvern,
      version: "0.0.1",
-     elixir: "~> 0.13.0"]
+     elixir: "~> 0.14.0"]
   end
 
   def application do
