@@ -1,5 +1,5 @@
 defmodule Wyvern.Cache do
-  use GenServer.Behaviour
+  use GenServer
 
   def start_link() do
     :gen_server.start_link({:local, __MODULE__}, __MODULE__, [], [])

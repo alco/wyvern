@@ -37,7 +37,7 @@ defmodule SEEx.Compiler do
   # Generates the buffers by handling each expression from the tokenizer
 
   defp generate_buffer([{:text, chars}|t], buffer, scope, state) do
-    {buffer, new_data} = state.engine.handle_text(buffer, String.from_char_data!(chars), state[:user_data])
+    {buffer, new_data} = state.engine.handle_text(buffer, IO.chardata_to_string(chars), state[:user_data])
     generate_buffer(t, buffer, scope, Map.put(state, :user_data, new_data))
   end
 
@@ -84,7 +84,7 @@ defmodule SEEx.Compiler do
   defp wrap_expr(current, line, buffer, chars, state) do
     new_lines = List.duplicate(?\n, line - state.line)
     key = length(state.quoted)
-    placeholder = '__EEX__(' ++ integer_to_list(key) ++ ');'
+    placeholder = '__EEX__(' ++ Integer.to_char_list(key) ++ ');'
     {current ++ placeholder ++ new_lines ++ chars,
      %{state | quoted: [{key, buffer}|state.quoted]}}
   end

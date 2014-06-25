@@ -1,5 +1,5 @@
 defmodule Wyvern do
-  use Application.Behaviour
+  use Application
 
   def start(_, _) do
     Wyvern.Supervisor.start_link
