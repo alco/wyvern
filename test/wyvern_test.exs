@@ -62,8 +62,8 @@ defmodule WyvernTest.LayersTest do
   use ExUnit.Case
 
   test "empty layers" do
-    # FIXME: be more specific about the exception
-    assert_raise ArgumentError, fn ->
+    msg = "At least one layer required to build a view or layout"
+    assert_raise ArgumentError, msg, fn ->
       Wyvern.render_view([])
     end
   end
